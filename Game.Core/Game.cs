@@ -2,6 +2,7 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Mathematics;
 using Game.Input;
+using Game.Graphics;
 using System;
 
 namespace Game.Core {
@@ -24,8 +25,7 @@ namespace Game.Core {
             this.MouseUp += this.Mouse.OnMouseUp;
             this.MouseWheel += this.Mouse.OnMouseWheel;
             this.MouseMove += this.Mouse.OnMouseMove;
-
-
+            
             // Bind any other events
             this.UpdateFrame += this.UpdateTitle;
         }

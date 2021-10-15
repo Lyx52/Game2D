@@ -20,7 +20,7 @@ namespace Game.Utils {
             if (File.Exists(filePath)) {
                 return File.OpenRead(filePath); 
             } else {
-                GameHandler.Logger.Error($"File {filePath} does not exist!");
+                GameHandler.Logger.Critical($"File {filePath} does not exist!");
                 return null;
             } 
         }

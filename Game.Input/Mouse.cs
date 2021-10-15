@@ -1,7 +1,7 @@
 using OpenTK.Windowing.Common;
 using OpenTK.Mathematics;
 using System;
-namespace Game2D.Input {
+namespace Game.Input {
     public enum MouseButton {
         LEFT,
         RIGHT,

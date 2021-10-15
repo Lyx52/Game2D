@@ -1,10 +1,10 @@
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Mathematics;
-using Game2D.Input;
+using Game.Input;
 using System;
 
-namespace Game2D.Core {
+namespace Game.Core {
     public class Game : GameWindow {
         private KeyboardHandler Keyboard;
         private MouseHandler Mouse;

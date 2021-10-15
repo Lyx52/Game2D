@@ -4,7 +4,7 @@ using System;
 using System.IO;
 #endif
 
-namespace Game2D.Utils {
+namespace Game.Utils {
     public class Logger {
         public enum LogLevel {
             INFO,

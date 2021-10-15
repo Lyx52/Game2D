@@ -1,6 +1,6 @@
 using OpenTK.Windowing.Common;
 
-namespace Game2D.Input {
+namespace Game.Input {
     public class KeyboardHandler {
         private bool[] inputArray;
 

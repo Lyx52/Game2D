@@ -1,13 +1,13 @@
 using System.Diagnostics;
 using System.Collections.Generic;
 
-namespace Game2D.Utils {
-    public class GameProfiler {
+namespace Game.Utils {
+    public class Profiler {
         private Dictionary<string, Stopwatch> timestamps;
         private Dictionary<string, long> results;
         public bool isEnabled = true;
         public bool loggingEnabled = true;
-        public GameProfiler() {
+        public Profiler() {
             this.timestamps = new Dictionary<string, Stopwatch>();
             this.results = new Dictionary<string, long>();
         }

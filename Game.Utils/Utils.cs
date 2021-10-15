@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace Game2D.Utils {
+namespace Game.Utils {
     public static class FileUtils {
         public static string ReadTextFile(string filePath) {
             UTF8Encoding decoder = new UTF8Encoding(true);

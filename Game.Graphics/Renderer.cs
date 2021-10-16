@@ -10,6 +10,18 @@ namespace Game.Graphics {
         CENTER,
         CORNER
     }
+    public struct QuadVertex {
+        public Vector2 Position;
+        public Vector4 Color;
+        public Vector2 TexCoord;
+        public float TexIndex;
+        public QuadVertex(Vector2 position, Vector4 color, Vector2 texCoord, float texIndex) {
+            this.Position = position;
+            this.Color = color;
+            this.TexCoord = texCoord;
+            this.TexIndex = texIndex;
+        }
+    }
     public struct RenderStorage {
         public List<Texture> TextureUnits { get; set; }
         public int TextureUnitIndex { get; set; }
@@ -22,7 +34,8 @@ namespace Game.Graphics {
         public readonly int MAX_VERTICES { get; }
         public readonly int MAX_QUADS { get; }
         public readonly int MAX_INDICES { get; }
-
+        public int Flushes { get; set; }
+        public int PrevFlushes { get; set; }
         private readonly Vector4[] CenteredQuad { get; }
         private readonly Vector4[] CornerQuad { get; }
         public readonly Vector2[] DefaultTextureUV { get; }
@@ -32,6 +45,8 @@ namespace Game.Graphics {
             this.VertexCount = 0;
             this.FloatBufferIndex = 0;
             this.Indices = 0;
+            this.Flushes = 0;
+            this.PrevFlushes = 0;
             this.MAX_TEXTURE_UNITS = 32;
             this.MAX_QUADS = (int)((bufferSize / vertexComponents) / 4);
             this.MAX_VERTICES = this.MAX_QUADS * 4;
@@ -62,7 +77,7 @@ namespace Game.Graphics {
             this.TextureUnits = new List<Texture>();
             this.DefaultTexture = new Texture(1, 1);
             this.DefaultTexture.SetData(new byte[4] {0xFF, 0xFF, 0xFF, 0xFF}, 1, 1);
- 
+
             for (int i = 0; i < MAX_TEXTURE_UNITS; i ++) {
                 this.TextureUnits.Add(this.DefaultTexture);
             }
@@ -99,6 +114,8 @@ namespace Game.Graphics {
         public Renderer(int bufferSize, int width, int height) {
             this.RendererState = new GLState();
             this.RendererState.SetClearColor(0.0f, 0.0f, 1.0f, 1.0f);
+            this.RendererState.EnableAlpha();
+
             this.TextureShader = new ShaderProgram("./res/shaders/shader.vert", "./res/shaders/shader.frag");
             this.TextureShader.Bind();
             this.DIRT_TEXTURE = Texture.LoadTexture("./res/textures/grass.png");
@@ -152,7 +169,6 @@ namespace Game.Graphics {
             }
             float textureIndex = this.AddUniqueTexture(texture);
             Matrix4 transform = this.CreateTransformMatrix(position, size, rotation);
-
             for (int i = 0; i < 4; i++) {
                 // This actually only check if its a center mode, if its any other mode it will always be corner
                 Vector4 vertexPosition = (this.Storage.GetVertexQuad(RendererState.QuadRenderMode))[i] * transform;
@@ -163,13 +179,13 @@ namespace Game.Graphics {
             this.Storage.Indices += 6;
         }
         private void StartScene(Matrix4 viewProjection) {
-            this.RendererState.EnableAlpha();
             this.TextureShader.SetMat4(Matrix4.Identity, "viewProjection");
             this.StartBatch();
         }
         private void EndScene(FrameEventArgs args) {
             this.Flush();
-            this.RendererState.DisableAlpha();
+            this.Storage.PrevFlushes = this.Storage.Flushes;
+            this.Storage.Flushes = 0;
         }
         public void StartBatch() {
             this.Storage.Reset();
@@ -180,6 +196,7 @@ namespace Game.Graphics {
         }
         public void Flush() {
             if (this.Storage.VertexCount > 0) {
+                this.Storage.Flushes++;
                 // Upload vertex data
                 this.VertexBuffer.Bind();
                 this.VertexBuffer.SetDataFloat(this.Storage.FloatBuffer, this.VertexLayout.Size * this.Storage.VertexCount);
@@ -196,12 +213,14 @@ namespace Game.Graphics {
         public void OnRenderFrame(FrameEventArgs args) {
             GL.Clear(ClearBufferMask.ColorBufferBit);
             OnStartScene?.Invoke(Matrix4.Identity);
-            GameHandler.Profiler.StartSection("StartGeometry");
+            Vector2 position = Vector2.Zero;
+            Vector2 size = Vector2.One;
+            //GameHandler.Profiler.StartSection("StartGeometry");
             // Todo: figure out why its slow
             for (int i = 0; i < 10000; i++) {
-                this.DrawQuad(Vector2.Zero, Vector2.One, this.APPLE_TEXTURE);
+                this.DrawQuad(position, size, this.APPLE_TEXTURE);
             }
-            GameHandler.Profiler.EndSection("StartGeometry");
+            //GameHandler.Profiler.EndSection("StartGeometry");
             OnEndScene?.Invoke(args);
         }
         public void OnResize(ResizeEventArgs args) {
@@ -261,6 +280,11 @@ namespace Game.Graphics {
             // Bind only available texture units
             for (int i = 0; i < this.Storage.TextureUnitIndex; i++) {
                 this.Storage.TextureUnits[i].BindToUnit(i);
+            }
+        }
+        public int TotalFlushes {
+            get {
+                return this.Storage.PrevFlushes;
             }
         }
     }

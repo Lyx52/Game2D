@@ -4,7 +4,6 @@ using OpenTK.Mathematics;
 using Game.Input;
 using Game.Graphics;
 using System;
-using System.Collections.Generic;
 
 namespace Game.Core {
     public class Game : GameWindow {
@@ -45,7 +44,7 @@ namespace Game.Core {
             Context.SwapBuffers();
         }
         private void UpdateTitle(FrameEventArgs args) {
-            this.Title = $"FPS: {Math.Round(1 / this.RenderTime, 2)}, UPS: {Math.Round(1 / this.UpdateTime, 2)}";
+            this.Title = $"FPS: {Math.Round(1 / this.RenderTime, 2)}, UPS: {Math.Round(1 / this.UpdateTime, 2)}, Flushes: {this.Renderer.TotalFlushes}";
         }
     }
 }

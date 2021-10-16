@@ -4,6 +4,7 @@ using OpenTK.Mathematics;
 using System;
 using System.Collections.Generic;
 using Game.Utils;
+using Game.Entity;
 
 namespace Game.Graphics {
     public enum QuadMode {
@@ -67,18 +68,12 @@ namespace Game.Graphics {
                 new Vector4(0.0f, 1.0f, 0.0f, 1.0f)
             };
 
-            this.DefaultTextureUV = new Vector2[4] {
-                new Vector2(1.0f, 1.0f),
-                new Vector2(1.0f, 0.0f),
-                new Vector2(0.0f, 0.0f),
-                new Vector2(0.0f, 1.0f)
-            };
+            this.DefaultTextureUV = Renderer.GetDefaultUVCoords();
             this.VertexArray = new QuadVertex[MAX_VERTICES];
             this.VertexArrayPtr = IOUtils.GetObjectPtr(this.VertexArray); 
 
             this.TextureUnits = new Texture[MAX_TEXTURE_UNITS];
-            this.DefaultTexture = new Texture(1, 1);
-            this.DefaultTexture.SetData(new byte[4] {0xFF, 0xFF, 0xFF, 0xFF}, 1, 1);
+            this.DefaultTexture = Texture.WhiteTexture;
 
             for (int i = 0; i < MAX_TEXTURE_UNITS; i ++) {
                 this.TextureUnits[i] = DefaultTexture;
@@ -112,6 +107,7 @@ namespace Game.Graphics {
         private BufferLayout VertexLayout;
         public Texture DIRT_TEXTURE;
         public Texture APPLE_TEXTURE;
+        public Player player;
         public Renderer(int bufferSize, int width, int height) {
             this.RendererState = new GLState();
             this.RendererState.SetClearColor(0.0f, 0.0f, 1.0f, 1.0f);
@@ -121,6 +117,7 @@ namespace Game.Graphics {
             this.TextureShader.Bind();
             this.DIRT_TEXTURE = Texture.LoadTexture("./res/textures/grass.png");
             this.APPLE_TEXTURE = Texture.LoadTexture("./res/textures/apple.png");
+
             // Setup vertex buffer/array
             this.VertexArray = new VertexArray();
             this.VertexLayout = new BufferLayout(new List<BufferElement>() {
@@ -153,6 +150,9 @@ namespace Game.Graphics {
             // Bind start/end scene events
             this.OnStartScene += StartScene;
             this.OnEndScene += EndScene;
+            this.player = new Player(0, 0);
+            this.player.Texture = DIRT_TEXTURE;
+            GameHandler.Logger.Info($"X: {this.player.X}, Y: {this.player.Y}");
         }
         public Matrix4 CreateTransformMatrix(Vector2 position, Vector2 size, float rotation) {
             Matrix4 _translation = Matrix4.CreateTranslation(position.X, position.Y, 0);
@@ -219,9 +219,8 @@ namespace Game.Graphics {
             Vector2 size = Vector2.One;
             //GameHandler.Profiler.StartSection("StartGeometry");
             // Todo: figure out why its slow
-            for (int i = 0; i < 10000; i++) {
-                this.DrawQuad(position, size, this.APPLE_TEXTURE);
-            }
+            this.player.Draw(this);
+            this.player.Rotation += 0.5f;
             //GameHandler.Profiler.EndSection("StartGeometry");
             OnEndScene?.Invoke(args);
         }
@@ -260,6 +259,14 @@ namespace Game.Graphics {
             get {
                 return this.Storage.PrevFlushes;
             }
+        }
+        public static Vector2[] GetDefaultUVCoords() {
+            return new Vector2[4] {
+                new Vector2(1.0f, 1.0f),
+                new Vector2(1.0f, 0.0f),
+                new Vector2(0.0f, 0.0f),
+                new Vector2(0.0f, 1.0f)
+            };
         }
     }
 }

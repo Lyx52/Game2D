@@ -23,6 +23,13 @@ namespace Game.Graphics {
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (float)TextureWrapMode.ClampToEdge);
             GL.BindTexture(TextureTarget.Texture2D, 0);
         }
+        public static Texture WhiteTexture {
+            get {
+                Texture texture = new Texture(1, 1);
+                texture.SetData(new byte[4] {0xFF, 0xFF, 0xFF, 0xFF}, 1, 1);
+                return texture;       
+            }
+        }
         public int TextureID {
             get {
                 return this.textureID;

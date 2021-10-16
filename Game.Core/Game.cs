@@ -3,6 +3,8 @@ using OpenTK.Windowing.Desktop;
 using OpenTK.Mathematics;
 using Game.Input;
 using Game.Graphics;
+using Game.Entity;
+
 using System;
 
 namespace Game.Core {

@@ -63,7 +63,7 @@ namespace Game.Graphics {
             GL.UseProgram(this.programID);
         }
         
-        public void UnBind() {
+        public void Unbind() {
             GL.UseProgram(0);
         }
         

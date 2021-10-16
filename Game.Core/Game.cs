@@ -4,11 +4,13 @@ using OpenTK.Mathematics;
 using Game.Input;
 using Game.Graphics;
 using System;
+using System.Collections.Generic;
 
 namespace Game.Core {
     public class Game : GameWindow {
         private KeyboardHandler Keyboard;
         private MouseHandler Mouse;
+        private Renderer Renderer;
         public Game(string title, int width, int height) : base(GameWindowSettings.Default, NativeWindowSettings.Default) {
             this.Size = new Vector2i(width, height);
             this.Title = title;
@@ -26,20 +28,21 @@ namespace Game.Core {
             this.MouseWheel += this.Mouse.OnMouseWheel;
             this.MouseMove += this.Mouse.OnMouseMove;
             
+            // Bind renderer to window frame render events
+            this.Renderer = new Renderer(GameHandler.MAX_BUFFER_MEMORY, Size.X, Size.Y);
+            this.RenderFrame += this.Renderer.OnRenderFrame;
+            this.Resize += this.Renderer.OnResize;
+            this.Renderer.OnEndScene += this.OnEndScene;
+
             // Bind any other events
             this.UpdateFrame += this.UpdateTitle;
-        }
-        protected override void OnRenderFrame(FrameEventArgs args) {
-
-            Context.SwapBuffers();
-            base.OnRenderFrame(args);
         }
         protected override void OnUpdateFrame(FrameEventArgs args) {
             base.OnUpdateFrame(args);
         }
         
-        protected override void OnResize(ResizeEventArgs args) {
-            base.OnResize(args);
+        private void OnEndScene(FrameEventArgs args) {
+            Context.SwapBuffers();
         }
         private void UpdateTitle(FrameEventArgs args) {
             this.Title = $"FPS: {Math.Round(1 / this.RenderTime, 2)}, UPS: {Math.Round(1 / this.UpdateTime, 2)}";

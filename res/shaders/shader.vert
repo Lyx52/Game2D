@@ -1,5 +1,5 @@
 #version 450
-layout(location = 0) in vec3 position;
+layout(location = 0) in vec2 position;
 layout(location = 1) in vec4 color;
 layout(location = 2) in vec2 uvCoord;
 layout(location = 3) in float texIndex;
@@ -12,7 +12,7 @@ out float pass_texIndex;
 
 void main(void)
 {
-    gl_Position = viewProjection * vec4(position, 1.0);
+    gl_Position = viewProjection * vec4(position.xy, 1.0, 1.0);
     pass_Color = color;
     pass_uvCoord = uvCoord;
     pass_texIndex = texIndex;

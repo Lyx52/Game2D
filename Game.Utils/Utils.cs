@@ -1,9 +1,10 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Runtime.InteropServices;
 
 namespace Game.Utils {
-    public static class FileUtils {
+    public static class IOUtils {
         public static string ReadTextFile(string filePath) {
             UTF8Encoding decoder = new UTF8Encoding(true);
             try {
@@ -45,7 +46,14 @@ namespace Game.Utils {
             writer.Flush();
             return writer;
         }
-
+        public static IntPtr GetObjectPtr(object allocatedObject) {
+            // Pin object, get addres and release pin
+            GCHandle pinned = GCHandle.Alloc(allocatedObject, GCHandleType.Pinned);
+            IntPtr address = pinned.AddrOfPinnedObject();
+            pinned.Free();
+            
+            return address;
+        }
     }
     public static class StringUtils {
         

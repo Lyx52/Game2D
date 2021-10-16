@@ -16,10 +16,10 @@ namespace Game.Graphics {
             this.attribLocations = new Dictionary<string, int>();
             this.uniformLocations = new Dictionary<string, int>();
 
-            string vertexSource = FileUtils.ReadTextFile(vertFile);
+            string vertexSource = IOUtils.ReadTextFile(vertFile);
             this.AttachShader(vertexSource, ShaderType.VertexShader);
 
-            string fragSource = FileUtils.ReadTextFile(fragFile);
+            string fragSource = IOUtils.ReadTextFile(fragFile);
             this.AttachShader(fragSource, ShaderType.FragmentShader);
 
             GL.LinkProgram(this.programID);

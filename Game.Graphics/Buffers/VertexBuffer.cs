@@ -25,15 +25,14 @@ namespace Game.Graphics {
             }
         }
         public void SetDataInt(int[] data, int sizeInBytes) {
-            this.Bind();
             GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)0, sizeInBytes, data);
-            this.Unbind();
         }
 
         public void SetDataFloat(float[] data, int sizeInBytes) {
-            this.Bind();
             GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)0, sizeInBytes, data);
-            this.Unbind();
+        }
+        public void SetDataQuadVertex(IntPtr data, int sizeInBytes) {
+            GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)0, sizeInBytes, data);
         }
         
         public void Bind() {

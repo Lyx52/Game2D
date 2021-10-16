@@ -4,7 +4,9 @@ namespace Game.Entity {
     public abstract class Entity {
         private Dictionary<string, int> componentIndexer;
         private List<object> components;
+        public int ID { get; set; }
         public Entity() {
+            this.ID = -1;
             this.componentIndexer = new Dictionary<string, int>();
             this.components = new List<object>();
         }
@@ -29,5 +31,6 @@ namespace Game.Entity {
         public void SetComponent<T>(string componentName, T value) {
             this.components[this.GetComponentIndex(componentName)] = value;
         }
+        public abstract void Update(double dt);
     }
 }

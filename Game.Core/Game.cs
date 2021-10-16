@@ -9,13 +9,13 @@ using System;
 
 namespace Game.Core {
     public class Game : GameWindow {
-        private KeyboardHandler Keyboard;
-        private MouseHandler Mouse;
-        private Renderer Renderer;
+        public KeyboardHandler Keyboard { get; }
+        public MouseHandler Mouse { get; }
+        public Renderer Renderer { get; }
         public Game(string title, int width, int height) : base(GameWindowSettings.Default, NativeWindowSettings.Default) {
             this.Size = new Vector2i(width, height);
             this.Title = title;
-            this.UpdateFrequency = 20;
+            this.UpdateFrequency = 30;
 
             // Bind keyboard handler to key events
             this.Keyboard = new KeyboardHandler();
@@ -31,18 +31,20 @@ namespace Game.Core {
             
             // Bind renderer to window frame render events
             this.Renderer = new Renderer(GameHandler.MAX_BUFFER_MEMORY, Size.X, Size.Y);
+            this.Renderer.player.AttachKeyboardHandler(this.Keyboard); // Move this somewhere else
             this.RenderFrame += this.Renderer.OnRenderFrame;
             this.Resize += this.Renderer.OnResize;
-            this.Renderer.OnEndScene += this.OnEndScene;
+            this.Renderer.OnEndScene += this.SwapBuffers;
 
             // Bind any other events
             this.UpdateFrame += this.UpdateTitle;
         }
-        protected override void OnUpdateFrame(FrameEventArgs args) {
+        protected override void OnUpdateFrame(FrameEventArgs args)
+        {
+            this.Renderer.player.Update(args.Time);
             base.OnUpdateFrame(args);
         }
-        
-        private void OnEndScene(FrameEventArgs args) {
+        private void SwapBuffers(FrameEventArgs args) {
             Context.SwapBuffers();
         }
         private void UpdateTitle(FrameEventArgs args) {

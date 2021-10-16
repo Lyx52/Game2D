@@ -1,4 +1,3 @@
-#define OPENGL_DEBUG
 using OpenTK.Graphics.OpenGL4;
 
 namespace Game.Graphics {
@@ -9,7 +8,13 @@ namespace Game.Graphics {
     }
     public class GLHelper {
         public static readonly TextureUnit DefaultTextureUnit = TextureUnit.Texture0;
-
+        public static void DisplayGLInfo() {
+            string extensions = GL.GetString(StringName.Extensions);
+            GameHandler.Logger.Info($"OpenGL Context: {GL.GetString(StringName.Version)}");
+            GameHandler.Logger.Info($"OpenGL Renderer: {GL.GetString(StringName.Renderer)}");
+            GameHandler.Logger.Info($"OpenGL Extensions: {(extensions.Length > 0 ? extensions : "None")}");
+            GameHandler.Logger.Info($"GLSL Version: {GL.GetString(StringName.ShadingLanguageVersion)}");
+        }
         public static string GetGLErrorString(ErrorCode code) {
             switch(code) {
                 case ErrorCode.OutOfMemory: return "Out of Memory";

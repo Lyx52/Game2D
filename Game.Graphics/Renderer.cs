@@ -150,9 +150,12 @@ namespace Game.Graphics {
             // Bind start/end scene events
             this.OnStartScene += StartScene;
             this.OnEndScene += EndScene;
+
             this.player = new Player(0, 0);
             this.player.Texture = DIRT_TEXTURE;
-            GameHandler.Logger.Info($"X: {this.player.X}, Y: {this.player.Y}");
+
+            // Display GL info
+            GLHelper.DisplayGLInfo();
         }
         public Matrix4 CreateTransformMatrix(Vector2 position, Vector2 size, float rotation) {
             Matrix4 _translation = Matrix4.CreateTranslation(position.X, position.Y, 0);
@@ -161,7 +164,7 @@ namespace Game.Graphics {
             return Matrix4.Mult(Matrix4.Mult(_scale, _rotation), _translation);
         }
         public void DrawQuad(Vector2 position, Vector2 size, Texture texture, Vector2[] textureUV, Vector4 color, float rotation=0) {
-            if (this.Storage.IsOverflow()){
+            if (this.Storage.IsOverflow()) {
                 this.NextBatch();
             }
             float textureIndex = this.AddUniqueTexture(texture);
@@ -194,8 +197,8 @@ namespace Game.Graphics {
         }
         public void Flush() {
             if (this.Storage.VertexCount > 0) {
-                GameHandler.Profiler.StartSection("Flush");
                 this.Storage.Flushes++;
+
                 // Upload vertex data
                 this.VertexBuffer.Bind();
                 unsafe {
@@ -209,19 +212,15 @@ namespace Game.Graphics {
                 this.DrawIndexed(PrimitiveType.Triangles);
                 this.VertexArray.Unbind();
                 this.VertexBuffer.Unbind();
-                GameHandler.Profiler.EndSection("Flush");
             }
         }
         public void OnRenderFrame(FrameEventArgs args) {
             GL.Clear(ClearBufferMask.ColorBufferBit);
             OnStartScene?.Invoke(Matrix4.Identity);
-            Vector2 position = Vector2.Zero;
-            Vector2 size = Vector2.One;
-            //GameHandler.Profiler.StartSection("StartGeometry");
-            // Todo: figure out why its slow
+
             this.player.Draw(this);
             this.player.Rotation += 0.5f;
-            //GameHandler.Profiler.EndSection("StartGeometry");
+
             OnEndScene?.Invoke(args);
         }
         public void OnResize(ResizeEventArgs args) {

@@ -1,4 +1,3 @@
-//#define FILE_LOGGING
 using System;
 #if FILE_LOGGING
 using System.IO;

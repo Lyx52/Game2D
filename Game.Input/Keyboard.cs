@@ -3,7 +3,6 @@ using OpenTK.Windowing.Common;
 namespace Game.Input {
     public class KeyboardHandler {
         private bool[] inputArray;
-
         public KeyboardHandler() {
             this.inputArray = new bool[256];
         }

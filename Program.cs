@@ -7,6 +7,8 @@ namespace Game
         private static Logger MainLogger;
         private static Profiler MainProfiler;
 
+        private static Core.Game game;
+
         public static int MAX_BUFFER_MEMORY = 32768;
         
         // These values need to be loaded from settings
@@ -17,10 +19,15 @@ namespace Game
             MainLogger = new Logger();
             MainProfiler = new Profiler();
 
-            using (Core.Game game = new Core.Game("SimpleGame2D", WIDTH, HEIGHT)) {
+            using (game = new Core.Game("SimpleGame2D", WIDTH, HEIGHT)) {
                 game.Run();
             }
             MainLogger.Close();
+        }
+        public static Core.Game CoreGame {
+            get {
+                return game;
+            }
         }
         public static Logger Logger {
             get {

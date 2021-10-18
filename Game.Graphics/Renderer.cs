@@ -98,16 +98,18 @@ namespace Game.Graphics {
     public class Renderer {
 
         public event Action<FrameEventArgs> OnEndScene;
-        public event Action<Matrix4> OnStartScene;
+        public event Action<Renderer> OnStartScene;
+        public event Action<Renderer> OnRender;
         private GLState RendererState;
         private RenderStorage Storage;
         private ShaderProgram TextureShader;
+        private UniformBuffer CameraBuffer;
         private VertexArray VertexArray;
         private VertexBuffer VertexBuffer;
         private BufferLayout VertexLayout;
         public Texture DIRT_TEXTURE;
         public Texture APPLE_TEXTURE;
-        public Player player;
+        private IntPtr ViewProjectionMatrix;
         public Renderer(int bufferSize, int width, int height) {
             this.RendererState = new GLState();
             this.RendererState.SetClearColor(0.0f, 0.0f, 1.0f, 1.0f);
@@ -146,13 +148,13 @@ namespace Game.Graphics {
                 offset += 4;
             }
             this.VertexArray.SetIndexBuffer(new IndexBuffer(sizeof(uint) * this.Storage.MAX_INDICES, data:quadIndices));
-            
-            // Bind start/end scene events
-            this.OnStartScene += StartScene;
+            unsafe {
+                this.CameraBuffer = new UniformBuffer(sizeof(Matrix4), 1);
+                this.ViewProjectionMatrix = IOUtils.GetObjectPtr(Matrix4.Zero);
+            }
+            // Bind events
             this.OnEndScene += EndScene;
-
-            this.player = new Player(0, 0);
-            this.player.Texture = DIRT_TEXTURE;
+            this.OnStartScene += StartScene;
 
             // Display GL info
             GLHelper.DisplayGLInfo();
@@ -179,8 +181,13 @@ namespace Game.Graphics {
         public void DrawQuad(Vector2 position, Vector2 size, Texture texture, float rotation=0) {
             this.DrawQuad(position, size, texture, this.Storage.DefaultTextureUV, new Vector4(1.0f, 1.0f, 1.0f, 1.0f), rotation:rotation);
         }
-        private void StartScene(Matrix4 viewProjection) {
-            this.TextureShader.SetMat4(Matrix4.Identity, "viewProjection");
+        public void SetViewProjection(Matrix4 viewProjection) {
+            this.ViewProjectionMatrix = IOUtils.GetObjectPtr(viewProjection);
+        }
+        private void StartScene(Renderer renderer) {
+            unsafe {
+                this.CameraBuffer.SetData(this.ViewProjectionMatrix, sizeof(Matrix4));
+            }
             this.StartBatch();
         }
         private void EndScene(FrameEventArgs args) {
@@ -216,11 +223,8 @@ namespace Game.Graphics {
         }
         public void OnRenderFrame(FrameEventArgs args) {
             GL.Clear(ClearBufferMask.ColorBufferBit);
-            OnStartScene?.Invoke(Matrix4.Identity);
-
-            this.player.Draw(this);
-            this.player.Rotation += 0.5f;
-
+            OnStartScene?.Invoke(this);
+            OnRender?.Invoke(this);
             OnEndScene?.Invoke(args);
         }
         public void OnResize(ResizeEventArgs args) {

@@ -13,7 +13,7 @@ namespace Game.Utils {
         }
         public void EndSection(string name, bool continueProfiling=false) {
             if (this.isEnabled) {
-                if (!this.results.ContainsKey(name)) {
+                if (this.results.ContainsKey(name)) {
                     if (this.timestamps.ContainsKey(name)) {
                         if (this.timestamps.TryGetValue(name, out Stopwatch stopwatch)) {
                             stopwatch.Stop();

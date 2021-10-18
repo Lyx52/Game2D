@@ -21,5 +21,8 @@ namespace Game.Entity {
             set { this.SetComponent<Vector2[]>("texCoords", value); }
         }
         public abstract void Draw(Renderer renderer);
+        public override string ToString() {
+            return "DrawableEntity";
+        }
     }
 }

@@ -12,6 +12,7 @@ namespace Game.Core {
         public KeyboardHandler Keyboard { get; }
         public MouseHandler Mouse { get; }
         public Renderer Renderer { get; }
+        public EntityManager EntityHandler { get; }
         public Game(string title, int width, int height) : base(GameWindowSettings.Default, NativeWindowSettings.Default) {
             this.Size = new Vector2i(width, height);
             this.Title = title;
@@ -31,21 +32,36 @@ namespace Game.Core {
             
             // Bind renderer to window frame render events
             this.Renderer = new Renderer(GameHandler.MAX_BUFFER_MEMORY, Size.X, Size.Y);
-            this.Renderer.player.AttachKeyboardHandler(this.Keyboard); // Move this somewhere else
             this.RenderFrame += this.Renderer.OnRenderFrame;
             this.Resize += this.Renderer.OnResize;
             this.Renderer.OnEndScene += this.SwapBuffers;
+            
+            // Setup entity handler
+            this.EntityHandler = new EntityManager();
 
+            TestEntity entity = new TestEntity(0, 0);
+            entity.Texture = this.Renderer.DIRT_TEXTURE;
+            this.EntityHandler.AddEntity(entity);
+            
+            // Add player entity
+            Player player = new Player(0, 0);
+            player.Texture = this.Renderer.APPLE_TEXTURE;
+            player.AttachKeyboardHandler(this.Keyboard);
+            this.EntityHandler.AddEntity(player);
+            
+            // Attach renderer to entity handler
+            this.Renderer.OnRender += this.EntityHandler.OnRender;
+            
             // Bind any other events
-            this.UpdateFrame += this.UpdateTitle;
-        }
-        protected override void OnUpdateFrame(FrameEventArgs args)
-        {
-            this.Renderer.player.Update(args.Time);
-            base.OnUpdateFrame(args);
+            this.UpdateFrame += this.UpdateTitle; 
         }
         private void SwapBuffers(FrameEventArgs args) {
             Context.SwapBuffers();
+        }
+        protected override void OnUpdateFrame(FrameEventArgs args)
+        {
+            this.EntityHandler.OnUpdate(args.Time);
+            base.OnUpdateFrame(args);
         }
         private void UpdateTitle(FrameEventArgs args) {
             this.Title = $"FPS: {Math.Round(1 / this.RenderTime, 2)}, UPS: {Math.Round(1 / this.UpdateTime, 2)}, Flushes: {this.Renderer.TotalFlushes}";

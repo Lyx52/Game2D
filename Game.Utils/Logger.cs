@@ -12,7 +12,7 @@ namespace Game.Utils {
             ERROR,
             CRITICAL
         }
-        private int LoggingLevel = 0;
+        private int _LoggingLevel = 0;
         
         #if FILE_LOGGING
         private StreamWriter LogWriter = FileUtils.GetLogWriter();
@@ -24,6 +24,10 @@ namespace Game.Utils {
             LogWriter.Flush();
             LogWriter.Close();
             #endif
+        }
+        public int LoggingLevel {
+            get { return this._LoggingLevel; }
+            set { this._LoggingLevel = Math.Min(Math.Max(value, 0), 4); }
         }
 
         public void Log(string message, LogLevel severity) {

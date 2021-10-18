@@ -14,6 +14,7 @@ namespace Game.Utils {
             }
             return "";
         }
+
         public static string GetCWD() {
             return Directory.GetCurrentDirectory();
         }
@@ -53,6 +54,11 @@ namespace Game.Utils {
             pinned.Free();
             
             return address;
+        }
+        public static ReadOnlySpan<T> GetObjectSpan<T>(object obj) {
+            unsafe {
+                return new ReadOnlySpan<T>((void*)IOUtils.GetObjectPtr(obj), 1);
+            }
         }
     }
     public static class StringUtils {

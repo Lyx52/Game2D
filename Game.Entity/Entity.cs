@@ -32,5 +32,9 @@ namespace Game.Entity {
             this.components[this.GetComponentIndex(componentName)] = value;
         }
         public abstract void Update(double dt);
+        
+        public override string ToString() {
+            return "Entity";
+        }
     }
 }

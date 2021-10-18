@@ -1,7 +1,8 @@
 using OpenTK.Mathematics;
 using Game.Graphics;
 using Game.Input;
-
+using Game.Utils;
+using System;
 namespace Game.Entity {
     public class Player : DrawableEntity {
         public Player(float x, float y) : base() {
@@ -12,8 +13,10 @@ namespace Game.Entity {
             this.AttachComponent<Vector2>(Vector2.One, "size");
             this.AttachComponent<Vector2>(Vector2.Zero, "velocity");
             this.AttachComponent<EntityController>(new EntityController(this), "controller");
+            this.AttachComponent<OrthoCamera>(new OrthoCamera(-1, 1, -1, 1, this.Position), "camera");
         }
         public override void Draw(Renderer renderer) {
+            this.Camera.SetViewMatrix(renderer);
             renderer.DrawQuad(this.Position, this.Size, this.Texture, this.TexCoords, this.MaskColor, rotation:this.Rotation);
         }
         public EntityController Controller {
@@ -55,6 +58,9 @@ namespace Game.Entity {
             get { return this.Size.Y; }
             set { this.SetComponent<Vector2>("size", new Vector2(this.Size.X, value)); }
         }
+        public ReadOnlySpan<Vector2> PositionSpan {
+            get { return IOUtils.GetObjectSpan<Vector2>(this.Position); }
+        }
         public Vector2 Position {
             get { return this.GetComponent<Vector2>("position"); }
             set { this.SetComponent<Vector2>("position", value); }
@@ -67,13 +73,24 @@ namespace Game.Entity {
             get { return this.Position.Y; }
             set { this.SetComponent<Vector2>("position", new Vector2(this.Position.X, value)); }
         }
+        public OrthoCamera Camera {
+            get { return this.GetComponent<OrthoCamera>("camera"); }
+        }
+        public Vector2 CameraPosition {
+            get { return this.Camera.Position;}
+            set { this.GetComponent<OrthoCamera>("camera").SetPosition(value); }
+        }
         public void AttachKeyboardHandler(KeyboardHandler handler) {
             this.GetComponent<EntityController>("controller").AttachKeyboardHandler(handler);
         }
         public override void Update(double dt) {
             this.Velocity += Vector2.Multiply(this.Controller.GetDirectional(), (float)(this.Acceleration * dt));
             this.Position += this.Velocity;
+            this.CameraPosition += this.Velocity;
             this.Velocity *= this.Drag;
+        }
+        public override string ToString() {
+            return "Player";
         }
     }
 }

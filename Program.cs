@@ -1,11 +1,12 @@
 ﻿using Game.Utils;
-
+using Game.Graphics;
 namespace Game
 {
     class GameHandler
     {
         private static Logger MainLogger;
         private static Profiler MainProfiler;
+        private static Renderer MainRenderer;
 
         public static int MAX_BUFFER_MEMORY = 32768;
         
@@ -18,19 +19,19 @@ namespace Game
             MainProfiler = new Profiler();
 
             using (Core.Game game = new Core.Game("SimpleGame2D", WIDTH, HEIGHT)) {
+                MainRenderer = game.Renderer;
                 game.Run();
             }
             MainLogger.Close();
         }
         public static Logger Logger {
-            get {
-                return MainLogger;
-            }
+            get { return MainLogger; }
         }
         public static Profiler Profiler {
-            get {
-                return MainProfiler;
-            }
+            get { return MainProfiler; }
+        }
+        public static Renderer Renderer {
+            get { return MainRenderer; }
         }
     }
 }

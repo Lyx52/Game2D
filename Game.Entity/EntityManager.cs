@@ -11,7 +11,7 @@ namespace Game.Entity {
             this.drawableEntities = new List<int>();
         }
         public void AddEntity(Entity entity) {
-            if (entity.GetComponentIndex("texture") != -1) {
+            if (entity.GetParrent() == "DrawableEntity") {
                 this.drawableEntities.Add(this.entities.Count);
             }
             if (entity.ToString() == "Player") {
@@ -28,6 +28,7 @@ namespace Game.Entity {
         }
         public void OnRender(Renderer renderer) {
             foreach (int entityIndex in this.drawableEntities) {
+                // GameHandler.Logger.Debug($"GC::Generation: {System.GC.GetGeneration(this.entities[entityIndex])}");
                 ((DrawableEntity)this.entities[entityIndex]).Draw(renderer);
             }
         }

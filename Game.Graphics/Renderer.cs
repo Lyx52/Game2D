@@ -109,8 +109,10 @@ namespace Game.Graphics {
         private BufferLayout VertexLayout;
         public Texture DIRT_TEXTURE;
         public Texture APPLE_TEXTURE;
-        private IntPtr ViewProjectionMatrix;
+        public IntPtr PtrViewProjection { get; set; }
+        public Vector2 DrawSize { get; set; }
         public Renderer(int bufferSize, int width, int height) {
+            this.DrawSize = new Vector2(width, height);
             this.RendererState = new GLState();
             this.RendererState.SetClearColor(0.0f, 0.0f, 1.0f, 1.0f);
             this.RendererState.EnableAlpha();
@@ -150,7 +152,7 @@ namespace Game.Graphics {
             this.VertexArray.SetIndexBuffer(new IndexBuffer(sizeof(uint) * this.Storage.MAX_INDICES, data:quadIndices));
             unsafe {
                 this.CameraBuffer = new UniformBuffer(sizeof(Matrix4), 1);
-                this.ViewProjectionMatrix = IOUtils.GetObjectPtr(Matrix4.Zero);
+                this.PtrViewProjection = IOUtils.GetObjectPtr(Matrix4.Zero);
             }
             // Bind events
             this.OnEndScene += EndScene;
@@ -181,12 +183,9 @@ namespace Game.Graphics {
         public void DrawQuad(Vector2 position, Vector2 size, Texture texture, float rotation=0) {
             this.DrawQuad(position, size, texture, this.Storage.DefaultTextureUV, new Vector4(1.0f, 1.0f, 1.0f, 1.0f), rotation:rotation);
         }
-        public void SetViewProjection(Matrix4 viewProjection) {
-            this.ViewProjectionMatrix = IOUtils.GetObjectPtr(viewProjection);
-        }
         private void StartScene(Renderer renderer) {
             unsafe {
-                this.CameraBuffer.SetData(this.ViewProjectionMatrix, sizeof(Matrix4));
+                this.CameraBuffer.SetData(this.PtrViewProjection, sizeof(Matrix4));
             }
             this.StartBatch();
         }

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-
 namespace Game.Entity {
     public abstract class Entity {
         private Dictionary<string, int> componentIndexer;
@@ -28,13 +27,16 @@ namespace Game.Entity {
         public T GetComponent<T>(string componentName) {
             return (T)this.components[this.GetComponentIndex(componentName)];
         }
-        public void SetComponent<T>(string componentName, T value) {
+        public void SetComponent<T>(string componentName, object value) {
             this.components[this.GetComponentIndex(componentName)] = value;
         }
         public abstract void Update(double dt);
         
         public override string ToString() {
             return "Entity";
+        }
+        public virtual string GetParrent() {
+            return "";
         }
     }
 }

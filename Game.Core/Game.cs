@@ -4,7 +4,7 @@ using OpenTK.Mathematics;
 using Game.Input;
 using Game.Graphics;
 using Game.Entity;
-
+using Game.Utils;
 using System;
 
 namespace Game.Core {
@@ -39,21 +39,26 @@ namespace Game.Core {
             // Setup entity handler
             this.EntityHandler = new EntityManager();
 
-            TestEntity entity = new TestEntity(0, 0);
-            entity.Texture = this.Renderer.DIRT_TEXTURE;
-            this.EntityHandler.AddEntity(entity);
+            Random r = new Random();
+            for (int i = 0; i < 10000; i++) {
+                TestEntity entity = new TestEntity(i, (float)r.NextDouble());
+                entity.Texture = this.Renderer.DIRT_TEXTURE;
+                this.EntityHandler.AddEntity(entity);
+            }
+            
             
             // Add player entity
             Player player = new Player(0, 0);
             player.Texture = this.Renderer.APPLE_TEXTURE;
-            player.AttachKeyboardHandler(this.Keyboard);
+            player.Controller.AttachKeyboardHandler(this.Keyboard);
+            player.Controller.AttachMouseHandler(this.Mouse);
             this.EntityHandler.AddEntity(player);
             
             // Attach renderer to entity handler
             this.Renderer.OnRender += this.EntityHandler.OnRender;
             
             // Bind any other events
-            this.UpdateFrame += this.UpdateTitle; 
+            this.UpdateFrame += this.UpdateTitle;
         }
         private void SwapBuffers(FrameEventArgs args) {
             Context.SwapBuffers();
@@ -64,7 +69,7 @@ namespace Game.Core {
             base.OnUpdateFrame(args);
         }
         private void UpdateTitle(FrameEventArgs args) {
-            this.Title = $"FPS: {Math.Round(1 / this.RenderTime, 2)}, UPS: {Math.Round(1 / this.UpdateTime, 2)}, Flushes: {this.Renderer.TotalFlushes}";
+            this.Title = $"FPS: {Math.Round(1 / this.RenderTime, 2)}, UPS: {Math.Round(1 / this.UpdateTime, 2)}, Flushes: {this.Renderer.TotalFlushes}, Mem: {Math.Round((double)System.GC.GetTotalMemory(false) / (1000 * 1000), 2)}Mb";
         }
     }
 }

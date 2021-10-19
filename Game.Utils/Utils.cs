@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
+using OpenTK.Mathematics;
 
 namespace Game.Utils {
     public static class IOUtils {
@@ -82,6 +83,19 @@ namespace Game.Utils {
     public static class MathUtils {
         public static double ToRadians(double value) {
             return (Math.PI / 180) * value;
+        }
+        public static float Rad2Deg {
+            get { return (float)(360 / (Math.PI * 2));}
+        }
+        public static float Deg2Rad {
+            get { return (float)((Math.PI * 2) / 360);}
+        }
+        public static float LookAt(Vector2 start, Vector2 target) {
+            Vector2 diff = (start - target).Normalized();
+            return (MathF.Atan2(diff.X, diff.Y) * MathUtils.Rad2Deg);
+        }
+        public static Vector2 Rotate(Vector2 vectorIn, float angle) {
+            return vectorIn * Matrix2.CreateRotation(angle);
         }
         public static int ToInt(bool value) {
             return value ? 1 : 0;

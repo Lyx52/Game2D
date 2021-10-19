@@ -13,6 +13,7 @@ namespace Game.Entity {
     public class EntityController {
         private Entity parrentEntity;
         private KeyboardHandler keyboardHandler;
+        private MouseHandler mouseHandler;
         private Dictionary<ControllerAction, int> actions;
 
         public EntityController(Entity parrent) {
@@ -22,6 +23,9 @@ namespace Game.Entity {
         }
         public void AttachKeyboardHandler(KeyboardHandler handler) {
             this.keyboardHandler = handler;
+        }
+        public void AttachMouseHandler(MouseHandler handler) {
+            this.mouseHandler = handler;
         }
         public int GetActionKeyCode(ControllerAction action) {
             if (this.actions.TryGetValue(action, out int keyCode)) {
@@ -51,6 +55,12 @@ namespace Game.Entity {
                     } break;
                 }
             } 
+        }
+        public Vector2 MousePosition {
+            get { return this.mouseHandler.GetPosition(); }
+        }
+        public Vector2 GlobalMousePosition {
+            get { return (this.MousePosition - GameHandler.Renderer.DrawSize / 2); }
         }
     }
 }

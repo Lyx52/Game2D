@@ -42,13 +42,13 @@ namespace Game.Core {
             // NOTE: Each entity is about 470-500 bytes
             for (int i = 0; i < 1000; i++) {
                 TestEntity entity = new TestEntity(i, (float)r.NextDouble());
-                entity.Texture = this.Renderer.DIRT_TEXTURE;
+                entity.Sprite.SpriteTexture = this.Renderer.DIRT_TEXTURE;
                 this.EntityHandler.AddEntity(entity);
             }
             
             // Add player entity
             Player player = new Player(0, 0);
-            player.Texture = this.Renderer.APPLE_TEXTURE;
+            player.Sprite.SpriteTexture = this.Renderer.APPLE_TEXTURE;
             player.Controller.AttachKeyboardHandler(this.Keyboard);
             player.Controller.AttachMouseHandler(this.Mouse);
             Vector2 projectionSize = this.Size / 8;

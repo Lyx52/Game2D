@@ -10,7 +10,7 @@ namespace Game.Entity {
             this.AttachComponent<OrthoCamera>(new OrthoCamera(-1, 1, -1, 1), "Camera");
         }
         public override void Draw(Renderer renderer) {
-            renderer.DrawQuad(this.KinematicBody.Position, this.KinematicBody.Size, this.Texture, this.TexCoords, this.MaskColor, rotation:this.KinematicBody.Rotation);
+            renderer.DrawQuad(this.KinematicBody.Position, this.KinematicBody.Size, this.Sprite.SpriteTexture, this.TexCoords, this.MaskColor, rotation:this.KinematicBody.Rotation);
         }
         public EntityController Controller {
             get { return this.GetComponent<EntityController>("Controller"); }

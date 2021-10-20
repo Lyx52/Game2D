@@ -21,7 +21,7 @@ namespace Game.Graphics {
             Vector2 sizeNormalized = new Vector2(1.0f / (float)this.SpritesheetSize.X, 1.0f / (float)this.SpritesheetSize.Y);
             float TileX = 0;
             float TileY = 0;
-
+            // Basically create a uv map for each of the tiles
             for (int row = 0; row < this.SpritesheetSize.Y; row++) {
                 TileX = 0;
                 this.tileUV[row] = new Vector2[this.SpritesheetSize.X][];

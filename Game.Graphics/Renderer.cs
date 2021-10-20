@@ -166,9 +166,8 @@ namespace Game.Graphics {
             // Bind events
             this.OnEndScene += EndScene;
             this.OnStartScene += StartScene;
-            this.spriteSheet = new SpriteSheet(this.TILE_SPRITESHEET, 6, 1);
-            for (int i = 0; i < 6; i++)
-                this.spriteSheet.AddNamedSubSprite($"running_{i}", i, 0);
+            this.spriteSheet = new SpriteSheet(this.DIRT_TEXTURE, 2, 2);
+
             // Display GL info
             GLHelper.DisplayGLInfo();
         }
@@ -235,8 +234,9 @@ namespace Game.Graphics {
             GL.Clear(ClearBufferMask.ColorBufferBit);
             OnStartScene?.Invoke(this);
             OnRender?.Invoke(this);
-            for (int i = 0; i < 6; i++) 
-                this.DrawQuad(new Vector2(i * 0.5f, 0.0f), Vector2.One, this.spriteSheet.GetTexture(), this.spriteSheet.GetNamedSubSprite($"running_{i + 1}"), new Vector4(1.0f, 1.0f, 1.0f, 1.0f));
+            for (int i = 0; i < 2; i++)
+                for (int r = 0; r < 2; r++)
+                    this.DrawQuad(new Vector2(i * 1.05f, r * 1.05f), Vector2.One, this.spriteSheet.SpriteTexture, this.spriteSheet.GetSubSprite(i, r), new Vector4(1.0f, 1.0f, 1.0f, 1.0f));
             OnEndScene?.Invoke(args);
         }
         public void OnResize(ResizeEventArgs args) {

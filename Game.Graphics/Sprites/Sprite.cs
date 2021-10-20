@@ -7,18 +7,15 @@ namespace Game.Graphics {
         ANIMATED_SPRITE
     }
     public class Sprite {
-        private Texture spriteTexture;
+        public Texture SpriteTexture { get; set; }
         public SpriteType Type { get; set; }
         public Vector2i TextureSize { get; set; }
-        public int TextureWidth { get { return this.spriteTexture.Width; } }
-        public int TextureHeight { get { return this.spriteTexture.Height; } }
+        public int TextureWidth { get { return this.SpriteTexture.Width; } }
+        public int TextureHeight { get { return this.SpriteTexture.Height; } }
         public Sprite(Texture texture) {
-            this.spriteTexture = texture;
+            this.SpriteTexture = texture;
             this.Type = SpriteType.SPRITE;
             this.TextureSize = new Vector2i(texture.Width, texture.Height);
-        }
-        public virtual Texture GetTexture() {
-            return this.spriteTexture;
         }
         public virtual Vector2[] GetTexCoords() {
             return Renderer.DefaultUVCoords;

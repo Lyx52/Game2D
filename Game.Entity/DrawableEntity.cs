@@ -4,9 +4,9 @@ namespace Game.Entity {
     public abstract class DrawableEntity : Entity {
         public Vector4 MaskColor { get; set; } 
         public Vector2[] TexCoords { get; set; }
-        public Texture Texture { get; set; }
+        public Sprite Sprite { get; set; }
         public DrawableEntity() {
-            this.Texture = Texture.WhiteTexture;
+            this.Sprite = new Sprite(Texture.WhiteTexture);
             this.MaskColor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f);
             this.TexCoords = Renderer.DefaultUVCoords;
         }

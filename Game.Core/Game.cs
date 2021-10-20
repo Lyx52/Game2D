@@ -38,20 +38,20 @@ namespace Game.Core {
             
             // Setup entity handler
             this.EntityHandler = new EntityManager();
-
             Random r = new Random();
-            for (int i = 0; i < 10000; i++) {
+            // NOTE: Each entity is about 470-500 bytes
+            for (int i = 0; i < 1000; i++) {
                 TestEntity entity = new TestEntity(i, (float)r.NextDouble());
                 entity.Texture = this.Renderer.DIRT_TEXTURE;
                 this.EntityHandler.AddEntity(entity);
             }
-            
             
             // Add player entity
             Player player = new Player(0, 0);
             player.Texture = this.Renderer.APPLE_TEXTURE;
             player.Controller.AttachKeyboardHandler(this.Keyboard);
             player.Controller.AttachMouseHandler(this.Mouse);
+            Vector2 projectionSize = this.Size / 8;
             this.EntityHandler.AddEntity(player);
             
             // Attach renderer to entity handler

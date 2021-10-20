@@ -28,7 +28,6 @@ namespace Game.Entity {
         }
         public void OnRender(Renderer renderer) {
             foreach (int entityIndex in this.drawableEntities) {
-                // GameHandler.Logger.Debug($"GC::Generation: {System.GC.GetGeneration(this.entities[entityIndex])}");
                 ((DrawableEntity)this.entities[entityIndex]).Draw(renderer);
             }
         }

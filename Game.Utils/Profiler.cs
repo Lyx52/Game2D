@@ -5,11 +5,13 @@ namespace Game.Utils {
     public class Profiler {
         private Dictionary<string, Stopwatch> timestamps;
         private Dictionary<string, long> results;
+        private Dictionary<string, long> memoryStart;
         public bool isEnabled = true;
         public bool loggingEnabled = true;
         public Profiler() {
             this.timestamps = new Dictionary<string, Stopwatch>();
             this.results = new Dictionary<string, long>();
+            this.memoryStart = new Dictionary<string, long>();
         }
         public void EndSection(string name, bool continueProfiling=false) {
             if (this.isEnabled) {
@@ -45,6 +47,33 @@ namespace Game.Utils {
                     }
                 }
             }
+        }
+        public void EndMemoryTracking(string name, bool continueProfiling=false) {
+            if (this.isEnabled) {
+                if (this.memoryStart.ContainsKey(name)) {
+                    if (this.loggingEnabled) {
+                        long bytes = System.GC.GetTotalMemory(false) - this.memoryStart[name];
+                        GameHandler.Logger.Info($"Profiler::Section<{name}> took {bytes}bytes of memory...");
+                        this.memoryStart.Remove(name);
+                    } 
+                }
+            }
+        }
+        public void StartMemoryTracking(string name, bool continueProfiling=false) {
+            if (this.isEnabled) {
+                if (!this.memoryStart.ContainsKey(name)) {
+                    if (this.loggingEnabled) {
+                        GameHandler.Logger.Info($"Profiler::TrakingMemory<{name}>");
+                    }
+                    this.memoryStart.Add(name, System.GC.GetTotalMemory(false));
+
+                } else if (continueProfiling) {
+                    this.memoryStart[name] = System.GC.GetTotalMemory(false);
+                    if (this.loggingEnabled) {
+                        GameHandler.Logger.Info($"Profiler::ResetingMemoryTracking<{name}>");
+                    }
+                }
+            }    
         }
     }
 }

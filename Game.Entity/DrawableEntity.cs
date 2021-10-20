@@ -8,7 +8,7 @@ namespace Game.Entity {
         public DrawableEntity() {
             this.Texture = Texture.WhiteTexture;
             this.MaskColor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-            this.TexCoords = Renderer.GetDefaultUVCoords();
+            this.TexCoords = Renderer.DefaultUVCoords;
         }
         public abstract void Draw(Renderer renderer);
 

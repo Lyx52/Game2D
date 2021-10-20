@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
 using OpenTK.Mathematics;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace Game.Utils {
     public static class IOUtils {

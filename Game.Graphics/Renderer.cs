@@ -68,7 +68,7 @@ namespace Game.Graphics {
                 new Vector4(0.0f, 1.0f, 0.0f, 1.0f)
             };
 
-            this.DefaultTextureUV = Renderer.GetDefaultUVCoords();
+            this.DefaultTextureUV = Renderer.DefaultUVCoords;
             this.VertexArray = new QuadVertex[MAX_VERTICES];
             this.VertexArrayPtr = IOUtils.GetObjectPtr(this.VertexArray); 
 
@@ -109,9 +109,18 @@ namespace Game.Graphics {
         private BufferLayout VertexLayout;
         public Texture DIRT_TEXTURE;
         public Texture APPLE_TEXTURE;
+        public Texture TILE_SPRITESHEET;
         public IntPtr PtrViewProjection { get; set; }
         public Vector2 DrawSize { get; set; }
+        public static Vector2[] DefaultUVCoords;
+        public SpriteSheet spriteSheet;
         public Renderer(int bufferSize, int width, int height) {
+            DefaultUVCoords = new Vector2[4] {
+                new Vector2(1.0f, 1.0f),
+                new Vector2(1.0f, 0.0f),
+                new Vector2(0.0f, 0.0f),
+                new Vector2(0.0f, 1.0f)
+            };
             this.DrawSize = new Vector2(width, height);
             this.RendererState = new GLState();
             this.RendererState.SetClearColor(0.0f, 0.0f, 1.0f, 1.0f);
@@ -121,7 +130,7 @@ namespace Game.Graphics {
             this.TextureShader.Bind();
             this.DIRT_TEXTURE = Texture.LoadTexture("./res/textures/grass.png");
             this.APPLE_TEXTURE = Texture.LoadTexture("./res/textures/apple.png");
-
+            this.TILE_SPRITESHEET = Texture.LoadTexture("./res/textures/spritestrip.png");
             // Setup vertex buffer/array
             this.VertexArray = new VertexArray();
             this.VertexLayout = new BufferLayout(new List<BufferElement>() {
@@ -157,7 +166,9 @@ namespace Game.Graphics {
             // Bind events
             this.OnEndScene += EndScene;
             this.OnStartScene += StartScene;
-
+            this.spriteSheet = new SpriteSheet(this.TILE_SPRITESHEET, 6, 1);
+            for (int i = 0; i < 6; i++)
+                this.spriteSheet.AddNamedSubSprite($"running_{i}", i, 0);
             // Display GL info
             GLHelper.DisplayGLInfo();
         }
@@ -224,6 +235,8 @@ namespace Game.Graphics {
             GL.Clear(ClearBufferMask.ColorBufferBit);
             OnStartScene?.Invoke(this);
             OnRender?.Invoke(this);
+            for (int i = 0; i < 6; i++) 
+                this.DrawQuad(new Vector2(i * 0.5f, 0.0f), Vector2.One, this.spriteSheet.GetTexture(), this.spriteSheet.GetNamedSubSprite($"running_{i + 1}"), new Vector4(1.0f, 1.0f, 1.0f, 1.0f));
             OnEndScene?.Invoke(args);
         }
         public void OnResize(ResizeEventArgs args) {
@@ -261,14 +274,6 @@ namespace Game.Graphics {
             get {
                 return this.Storage.PrevFlushes;
             }
-        }
-        public static Vector2[] GetDefaultUVCoords() {
-            return new Vector2[4] {
-                new Vector2(1.0f, 1.0f),
-                new Vector2(1.0f, 0.0f),
-                new Vector2(0.0f, 0.0f),
-                new Vector2(0.0f, 1.0f)
-            };
         }
     }
 }

@@ -40,7 +40,7 @@ namespace Game.Core {
             this.EntityHandler = new EntityManager();
             Random r = new Random();
             // NOTE: Each entity is about 470-500 bytes
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 10000; i++) {
                 TestEntity entity = new TestEntity(i, (float)r.NextDouble());
                 entity.Sprite.SpriteTexture = this.Renderer.DIRT_TEXTURE;
                 this.EntityHandler.AddEntity(entity);

@@ -12,7 +12,7 @@ namespace Game.Graphics {
         public Vector2i TextureSize { get; set; }
         public int TextureWidth { get { return this.SpriteTexture.Width; } }
         public int TextureHeight { get { return this.SpriteTexture.Height; } }
-        public Sprite(Texture texture) {
+        public Sprite(in Texture texture) {
             this.SpriteTexture = texture;
             this.Type = SpriteType.SPRITE;
             this.TextureSize = new Vector2i(texture.Width, texture.Height);

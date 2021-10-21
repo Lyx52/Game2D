@@ -4,12 +4,41 @@ using OpenTK.Mathematics;
 using System;
 using System.Collections.Generic;
 using Game.Utils;
-using Game.Entity;
 
 namespace Game.Graphics {
     public enum QuadMode {
         CENTER,
         CORNER
+    }
+    public enum RenderLayer {
+        BACKGROUND,
+        LAYER_1,
+        LAYER_2,
+        LAYER_3,
+        LAYER_4,
+        LAYER_5,
+        LAYER_6
+    }
+    public struct Quad2D : IComparable<Quad2D> {
+        public Vector2 Position;
+        public Vector2 Size;
+        public Texture Texture;
+        public Vector2[] TexCoords;
+        public Vector4 Color;
+        public float Rotation;
+        public int Layer;
+        public Quad2D(Vector2 position, Vector2 size, Texture texture, Vector2[] textureUV, Vector4 color, float rotation=0, RenderLayer layer=RenderLayer.BACKGROUND) {
+            this.Position = position;
+            this.Size = size;
+            this.Texture = texture;
+            this.TexCoords = textureUV;
+            this.Color = color;
+            this.Rotation = rotation;
+            this.Layer = (int)layer;
+        }
+        public int CompareTo(Quad2D other_quad) {
+            return this.Layer.CompareTo(other_quad.Layer);
+        }
     }
     public struct QuadVertex {
         public Vector2 Position;
@@ -40,7 +69,7 @@ namespace Game.Graphics {
         private readonly Vector4[] CenteredQuad { get; }
         private readonly Vector4[] CornerQuad { get; }
         public readonly Vector2[] DefaultTextureUV { get; }
-
+        public List<Quad2D> DispatchedQuads { get; set; }
         public RenderStorage(int bufferSize) {
             this.TextureUnitIndex = 0;
             this.VertexCount = 0;
@@ -71,7 +100,7 @@ namespace Game.Graphics {
             this.DefaultTextureUV = Renderer.DefaultUVCoords;
             this.VertexArray = new QuadVertex[MAX_VERTICES];
             this.VertexArrayPtr = IOUtils.GetObjectPtr(this.VertexArray); 
-
+            this.DispatchedQuads = new List<Quad2D>();
             this.TextureUnits = new Texture[MAX_TEXTURE_UNITS];
             this.DefaultTexture = Texture.WhiteTexture;
 
@@ -137,7 +166,7 @@ namespace Game.Graphics {
                 new BufferElement("position", ElementType.Float2, 0),
                 new BufferElement("color", ElementType.Float4, 1),
                 new BufferElement("uvCoord", ElementType.Float2, 2),
-                new BufferElement("texIndex", ElementType.Float, 3)    
+                new BufferElement("texIndex", ElementType.Float, 3) 
             });
 
             this.Storage = new RenderStorage(bufferSize);
@@ -177,21 +206,28 @@ namespace Game.Graphics {
             Matrix4 _scale = Matrix4.CreateScale(size.X, size.Y, 1.0f);
             return Matrix4.Mult(Matrix4.Mult(_scale, _rotation), _translation);
         }
-        public void DrawQuad(Vector2 position, Vector2 size, Texture texture, Vector2[] textureUV, Vector4 color, float rotation=0) {
+        public void DispatchQuad(Quad2D quad) {
+            this.Storage.DispatchedQuads.Add(quad);
+        }
+        public void GenerateQuadGeometry() {
+            this.Storage.DispatchedQuads.Sort();
+            foreach (Quad2D quad in this.Storage.DispatchedQuads) {
+                this.DrawQuad(quad);
+            }
+        }
+        public void DrawQuad(Quad2D quad) {
             if (this.Storage.IsOverflow()) {
                 this.NextBatch();
             }
-            float textureIndex = this.AddUniqueTexture(texture);
-            Matrix4 transform = this.CreateTransformMatrix(position, size, rotation);
+            float textureIndex = this.AddUniqueTexture(quad.Texture);
+            Matrix4 transform = this.CreateTransformMatrix(quad.Position, quad.Size, quad.Rotation);
             for (int i = 0; i < 4; i++) {
                 // This actually only check if its a center mode, if its any other mode it will always be corner
                 Vector4 vertexPosition = (this.Storage.GetVertexQuad(RendererState.QuadRenderMode))[i] * transform;
-                this.Storage.VertexArray[this.Storage.VertexCount++] = new QuadVertex(vertexPosition.Xy, color, textureUV[i], textureIndex);
+
+                this.Storage.VertexArray[this.Storage.VertexCount++] = new QuadVertex(vertexPosition.Xy, quad.Color, quad.TexCoords[i], textureIndex);
             }
             this.Storage.Indices += 6;
-        }
-        public void DrawQuad(Vector2 position, Vector2 size, Texture texture, float rotation=0) {
-            this.DrawQuad(position, size, texture, this.Storage.DefaultTextureUV, new Vector4(1.0f, 1.0f, 1.0f, 1.0f), rotation:rotation);
         }
         private void StartScene(Renderer renderer) {
             unsafe {
@@ -203,6 +239,7 @@ namespace Game.Graphics {
             this.Flush();
             this.Storage.PrevFlushes = this.Storage.Flushes;
             this.Storage.Flushes = 0;
+            this.Storage.DispatchedQuads.Clear();
         }
         public void StartBatch() {
             this.Storage.Reset();
@@ -236,7 +273,10 @@ namespace Game.Graphics {
             OnRender?.Invoke(this);
             for (int i = 0; i < 2; i++)
                 for (int r = 0; r < 2; r++)
-                    this.DrawQuad(new Vector2(i * 1.05f, r * 1.05f), Vector2.One, this.spriteSheet.SpriteTexture, this.spriteSheet.GetSubSprite(i, r), new Vector4(1.0f, 1.0f, 1.0f, 1.0f));
+                    this.DispatchQuad(new Quad2D(new Vector2(i * 1.05f, r * 1.05f), Vector2.One, this.spriteSheet.SpriteTexture, this.spriteSheet.GetSubSprite(i, r), new Vector4(1.0f, 1.0f, 1.0f, 1.0f), layer:RenderLayer.BACKGROUND));
+ 
+            // Finally generate geometry
+            this.GenerateQuadGeometry();
             OnEndScene?.Invoke(args);
         }
         public void OnResize(ResizeEventArgs args) {
@@ -271,9 +311,10 @@ namespace Game.Graphics {
             }
         }
         public int TotalFlushes {
-            get {
-                return this.Storage.PrevFlushes;
-            }
+            get { return this.Storage.PrevFlushes; }
+        }
+        public int TotalVertices {
+            get { return this.TotalFlushes * this.Storage.MAX_VERTICES; }
         }
     }
 }

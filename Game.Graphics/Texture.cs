@@ -60,7 +60,7 @@ namespace Game.Graphics {
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
             this.Unbind();
         }
-        public void SetData(byte[] data, int width, int height) {
+        public void SetData(in byte[] data, int width, int height) {
             GL.TextureStorage2D(this.textureID, 1, SizedInternalFormat.Rgba8, width, height);
             GL.TextureSubImage2D(this.textureID, 0, 0, 0, width, height, PixelFormat.Rgba, PixelType.UnsignedByte, data);
             this.GenerateMipmap();  

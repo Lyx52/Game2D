@@ -49,6 +49,9 @@ namespace Game.Utils {
             writer.Flush();
             return writer;
         }
+        public static GCHandle GetObjHandle(object allocatedObject) {
+            return GCHandle.Alloc(allocatedObject, GCHandleType.Pinned);
+        }
         public static IntPtr GetObjectPtr(object allocatedObject) {
             // Pin object, get addres and release pin
             GCHandle pinned = GCHandle.Alloc(allocatedObject, GCHandleType.Pinned);

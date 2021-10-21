@@ -8,9 +8,10 @@ namespace Game.Entity {
             this.AttachComponent<KinematicBody>(new KinematicBody(x, y), "KinematicBody");
             this.AttachComponent<EntityController>(new EntityController(this), "Controller");
             this.AttachComponent<OrthoCamera>(new OrthoCamera(-1, 1, -1, 1), "Camera");
+            this.Layer = RenderLayer.LAYER_2;
         }
         public override void Draw(Renderer renderer) {
-            renderer.DrawQuad(this.KinematicBody.Position, this.KinematicBody.Size, this.Sprite.SpriteTexture, this.TexCoords, this.MaskColor, rotation:this.KinematicBody.Rotation);
+            renderer.DispatchQuad(this.GetRenderQuad(this.KinematicBody));         
         }
         public EntityController Controller {
             get { return this.GetComponent<EntityController>("Controller"); }

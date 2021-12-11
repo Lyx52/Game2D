@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Game.Input;
 using OpenTK.Mathematics;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace Game.Entity {
     public enum ControllerAction {
@@ -10,7 +11,7 @@ namespace Game.Entity {
         MOVE_LEFT,
         MOVE_RIGHT
     }
-    public class EntityController {
+    public class EntityController : EntityComponent{
         private Entity parrentEntity;
         private KeyboardHandler keyboardHandler;
         private MouseHandler mouseHandler;
@@ -42,16 +43,16 @@ namespace Game.Entity {
             foreach (ControllerAction action in Enum.GetValues(typeof(ControllerAction))) {
                 switch(action) {
                     case ControllerAction.MOVE_UP: {
-                        this.actions.Add(action, 25); // W
+                        this.actions.Add(action, (int)Keys.W); // W
                     } break;
                     case ControllerAction.MOVE_DOWN: {
-                        this.actions.Add(action, 39); // S
+                        this.actions.Add(action, (int)Keys.S); // S
                     } break;
                     case ControllerAction.MOVE_LEFT: {
-                        this.actions.Add(action, 38); // A
+                        this.actions.Add(action, (int)Keys.A); // A
                     } break;
                     case ControllerAction.MOVE_RIGHT: {
-                        this.actions.Add(action, 40); // D
+                        this.actions.Add(action, (int)Keys.D); // D
                     } break;
                 }
             } 
@@ -61,6 +62,9 @@ namespace Game.Entity {
         }
         public Vector2 GlobalMousePosition {
             get { return (this.MousePosition - GameHandler.Renderer.DrawSize / 2); }
+        }
+        public override string ToString() {
+            return "ControllerComponent";
         }
     }
 }

@@ -9,5 +9,8 @@ namespace Game.Entity {
             this.Acceleration = 1.0D;
             this.Velocity = Vector2.Zero;
         }
+        public override string ToString() {
+            return "KinematicBody";
+        }
     }
 }

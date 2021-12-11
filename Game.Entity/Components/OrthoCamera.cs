@@ -18,7 +18,7 @@ namespace Game.Entity {
             this.Max.Y = bottom;
         }
     } 
-    public class OrthoCamera {
+    public class OrthoCamera : EntityComponent {
         private Matrix4 projection;
         private Matrix4 view;
         public Matrix4 ViewProjection { get; set; }
@@ -45,6 +45,9 @@ namespace Game.Entity {
             this.view = Matrix4.Invert(mult);
             this.ViewProjection = view * projection;
             this.PtrViewProjection = IOUtils.GetObjectPtr(this.ViewProjection);
+        }
+        public override string ToString() {
+            return "OrthoCamera";
         }
     }
 }

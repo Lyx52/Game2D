@@ -1,7 +1,7 @@
 using OpenTK.Mathematics;
 
 namespace Game.Entity {
-    public class PhysicalBody {
+    public class PhysicalBody : EntityComponent {
         public Vector2 Size { get; set; }
         public Vector2 Position { get; set; }
         public float Rotation { get; set; }
@@ -10,6 +10,9 @@ namespace Game.Entity {
             this.Size = Vector2.One;
             this.Position = new Vector2(x, y);
             this.Rotation = 0.0f;
+        }
+        public override string ToString() {
+            return "PhysicalBody";
         }
 
     }

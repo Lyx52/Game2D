@@ -4,7 +4,7 @@ using OpenTK.Mathematics;
 namespace Game.Entity {
     public class TestEntity : DrawableEntity {
         public TestEntity(float x, float y) {
-            this.AttachComponent<KinematicBody>(new KinematicBody(x, y), "KinematicBody");
+            this.AttachComponent(new KinematicBody(x, y), "KinematicBody");
             this.Layer = RenderLayer.LAYER_1;
         }
         public override void Update(double dt) {
@@ -16,7 +16,7 @@ namespace Game.Entity {
             this.KinematicBody.Rotation += 1.0f;
         }
         public KinematicBody KinematicBody {
-            get { return this.GetComponent<KinematicBody>("KinematicBody"); }
+            get { return (KinematicBody)this.GetComponent("KinematicBody"); }
         }
         public override string GetParrent() {
             return base.ToString();

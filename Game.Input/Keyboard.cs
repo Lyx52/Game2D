@@ -4,13 +4,13 @@ namespace Game.Input {
     public class KeyboardHandler {
         private bool[] inputArray;
         public KeyboardHandler() {
-            this.inputArray = new bool[256];
+            this.inputArray = new bool[512];
         }
         public void OnKeyUp(KeyboardKeyEventArgs args) {
-            this.inputArray[args.ScanCode] = false;
+            this.inputArray[(int)args.Key] = false;
         }
         public void OnKeyDown(KeyboardKeyEventArgs args) {
-            this.inputArray[args.ScanCode] = true;
+            this.inputArray[(int)args.Key] = true;
         }
         public bool GetKey(int keyCode) {
             return this.inputArray[keyCode];

@@ -30,6 +30,8 @@ namespace Game.Core {
             this.MouseWheel += this.Mouse.OnMouseWheel;
             this.MouseMove += this.Mouse.OnMouseMove;
             
+            GameHandler.Logger.Info($"OS Version: {System.Environment.OSVersion}");
+
             // Bind renderer to window frame render events
             this.Renderer = new Renderer(GameHandler.MAX_BUFFER_MEMORY, Size.X, Size.Y);
             this.RenderFrame += this.Renderer.OnRenderFrame;

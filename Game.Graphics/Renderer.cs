@@ -139,7 +139,7 @@ namespace Game.Graphics {
         public Vector2 DrawSize { get; set; }
         public static Vector2[] DefaultUVCoords;
         public SpriteSheet spriteSheet;
-        public OrthoCamera camera;
+        public OrthoCamera RenderCamera;
         public Renderer(int bufferSize, int width, int height) {
             DefaultUVCoords = new Vector2[4] {
                 new Vector2(1.0f, 1.0f),
@@ -154,9 +154,6 @@ namespace Game.Graphics {
 
             this.TextureShader = new ShaderProgram("./res/shaders/shader.vert", "./res/shaders/shader.frag");
             this.TextureShader.Bind();
-            this.DIRT_TEXTURE = Texture.LoadTexture("./res/textures/grass.png");
-            this.APPLE_TEXTURE = Texture.LoadTexture("./res/textures/apple.png");
-            this.TILE_SPRITESHEET = Texture.LoadTexture("./res/textures/spritestrip.png");
 
             // Setup vertex buffer/array
             this.VertexArray = new VertexArray();
@@ -188,11 +185,16 @@ namespace Game.Graphics {
             this.VertexArray.SetIndexBuffer(new IndexBuffer(sizeof(uint) * this.Storage.MAX_INDICES, data:quadIndices));
             unsafe {
                 this.CameraBuffer = new UniformBuffer(sizeof(Matrix4), 1);
-                this.PtrViewProjection = IOUtils.GetObjectPtr(Matrix4.Zero);
             }
-            // Bind events
+
+            // Temp vars
+            this.DIRT_TEXTURE = Texture.LoadTexture("./res/textures/grass.png");
+            this.APPLE_TEXTURE = Texture.LoadTexture("./res/textures/apple.png");
+            this.TILE_SPRITESHEET = Texture.LoadTexture("./res/textures/spritestrip.png");
             this.spriteSheet = new SpriteSheet(this.DIRT_TEXTURE, 2, 2);
-            this.camera = new OrthoCamera(-1, 1, -1, 1);
+            
+            // Init renderer camera
+            this.RenderCamera = new OrthoCamera(-1, 1, -1, 1);
             // Display GL info
             GLHelper.DisplayGLInfo();
         }
@@ -227,8 +229,7 @@ namespace Game.Graphics {
         }
         public void StartScene() {
             unsafe {
-                this.camera.Recalculate(Vector2.Zero);
-                this.CameraBuffer.SetData(this.camera.GetViewProjection(), sizeof(Matrix4));
+                this.CameraBuffer.SetData(this.RenderCamera.GetViewProjection(), sizeof(Matrix4));
             }
             this.StartBatch();
         }

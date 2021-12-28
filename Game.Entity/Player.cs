@@ -7,7 +7,6 @@ namespace Game.Entity {
         public Player(float x, float y) : base() {
             this.AttachComponent(new KinematicBody(x, y), "KinematicBody");
             this.AttachComponent(new EntityController(this), "Controller");
-            this.AttachComponent(new OrthoCamera(-1, 1, -1, 1), "Camera");
             this.Layer = RenderLayer.LAYER_2;
         }
         public override void Draw(Renderer renderer) {
@@ -19,9 +18,7 @@ namespace Game.Entity {
         public KinematicBody KinematicBody {
             get { return (KinematicBody)this.GetComponent("KinematicBody"); }
         }
-        public OrthoCamera Camera {
-            get { return (OrthoCamera)this.GetComponent("Camera"); }
-        }
+
         public override void Update(double dt) {
             // Rotate sprite towards mouse
             this.KinematicBody.Rotation = MathUtils.LookAt(this.KinematicBody.Position, this.Controller.GlobalMousePosition);
@@ -37,10 +34,6 @@ namespace Game.Entity {
 
             // We add drag to velocity
             this.KinematicBody.Velocity *= this.KinematicBody.Drag;
-
-            // Recalculate camera matrix and update it in renderer
-            this.Camera.Recalculate(this.KinematicBody.Position);
-            GameHandler.Renderer.PtrViewProjection = this.Camera.PtrViewProjection;
         }
         public override string ToString() {
             return "Player";

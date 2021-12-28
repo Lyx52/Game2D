@@ -32,7 +32,10 @@ namespace Game.Graphics {
             this.view = Matrix4.Identity;
             this.Rotation = 0;
             this.ViewProjection = view * projection;
-            this.ViewProjectionPtr = IOUtils.GetObjectPtr(this.ViewProjectionPtr);
+
+            // Allocate unmanaged memory for view projection matrix
+            this.ViewProjectionPtr = Marshal.AllocHGlobal(Marshal.SizeOf(this.ViewProjection));
+            this.Recalculate(Vector2.Zero);
         }
         public void SetProjection(float left, float right, float bottom, float top) {
             this.projection = Matrix4.CreateOrthographicOffCenter(left, right, bottom, top, 1.0f, -1.0f);
@@ -45,12 +48,15 @@ namespace Game.Graphics {
             Matrix4 mult = Matrix4.Mult(translation, rotation);
             this.view = Matrix4.Invert(mult);
             this.ViewProjection = view * projection;
+
+            // We copy matrix into unmanaged memory, deleting managed version, thisway we avoid garbage collector mem leaks
             Marshal.StructureToPtr<Matrix4>(this.ViewProjection, this.ViewProjectionPtr, true);
         }
         public unsafe IntPtr GetViewProjection() {
             return this.ViewProjectionPtr;
         }
-    }
-    public abstract class Camera {
+        public void Dispose() {
+            Marshal.FreeHGlobal(this.ViewProjectionPtr);
+        }
     }
 }

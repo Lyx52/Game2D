@@ -1,5 +1,7 @@
 ﻿using Game.Utils;
 using Game.Graphics;
+using Game.Core;
+
 namespace Game
 {
     class GameHandler
@@ -18,7 +20,7 @@ namespace Game
             MainLogger = new Logger();
             MainProfiler = new Profiler();
 
-            using (Core.Application game = new Core.Application("SimpleGame2D", WIDTH, HEIGHT)) {
+            using (Application game = new Application("SimpleGame2D", WIDTH, HEIGHT)) {
                 MainRenderer = game.Renderer;
                 game.Run();
             }

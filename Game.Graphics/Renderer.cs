@@ -125,10 +125,6 @@ namespace Game.Graphics {
         }
     }
     public class Renderer {
-
-        public event Action<FrameEventArgs> OnEndScene;
-        public event Action<Renderer> OnStartScene;
-        public event Action<Renderer> OnRender;
         private GLState RendererState;
         private RenderStorage Storage;
         private ShaderProgram TextureShader;
@@ -143,6 +139,7 @@ namespace Game.Graphics {
         public Vector2 DrawSize { get; set; }
         public static Vector2[] DefaultUVCoords;
         public SpriteSheet spriteSheet;
+        public OrthoCamera camera;
         public Renderer(int bufferSize, int width, int height) {
             DefaultUVCoords = new Vector2[4] {
                 new Vector2(1.0f, 1.0f),
@@ -160,6 +157,7 @@ namespace Game.Graphics {
             this.DIRT_TEXTURE = Texture.LoadTexture("./res/textures/grass.png");
             this.APPLE_TEXTURE = Texture.LoadTexture("./res/textures/apple.png");
             this.TILE_SPRITESHEET = Texture.LoadTexture("./res/textures/spritestrip.png");
+
             // Setup vertex buffer/array
             this.VertexArray = new VertexArray();
             this.VertexLayout = new BufferLayout(new List<BufferElement>() {
@@ -193,10 +191,8 @@ namespace Game.Graphics {
                 this.PtrViewProjection = IOUtils.GetObjectPtr(Matrix4.Zero);
             }
             // Bind events
-            this.OnEndScene += EndScene;
-            this.OnStartScene += StartScene;
             this.spriteSheet = new SpriteSheet(this.DIRT_TEXTURE, 2, 2);
-
+            this.camera = new OrthoCamera(-1, 1, -1, 1);
             // Display GL info
             GLHelper.DisplayGLInfo();
         }
@@ -229,13 +225,15 @@ namespace Game.Graphics {
             }
             this.Storage.Indices += 6;
         }
-        private void StartScene(Renderer renderer) {
+        public void StartScene() {
             unsafe {
-                this.CameraBuffer.SetData(this.PtrViewProjection, sizeof(Matrix4));
+                this.camera.Recalculate(Vector2.Zero);
+                this.CameraBuffer.SetData(this.camera.GetViewProjection(), sizeof(Matrix4));
             }
             this.StartBatch();
         }
-        private void EndScene(FrameEventArgs args) {
+        public void EndScene() {
+            this.GenerateQuadGeometry();
             this.Flush();
             this.Storage.PrevFlushes = this.Storage.Flushes;
             this.Storage.Flushes = 0;
@@ -266,18 +264,6 @@ namespace Game.Graphics {
                 this.VertexArray.Unbind();
                 this.VertexBuffer.Unbind();
             }
-        }
-        public void OnRenderFrame(FrameEventArgs args) {
-            GL.Clear(ClearBufferMask.ColorBufferBit);
-            OnStartScene?.Invoke(this);
-            OnRender?.Invoke(this);
-            for (int i = 0; i < 2; i++)
-                for (int r = 0; r < 2; r++)
-                    this.DispatchQuad(new Quad2D(new Vector2(i * 1.05f, r * 1.05f), Vector2.One, this.spriteSheet.SpriteTexture, this.spriteSheet.GetSubSprite(i, r), new Vector4(1.0f, 1.0f, 1.0f, 1.0f), layer:RenderLayer.BACKGROUND));
- 
-            // Finally generate geometry
-            this.GenerateQuadGeometry();
-            OnEndScene?.Invoke(args);
         }
         public void OnResize(ResizeEventArgs args) {
             GL.Viewport(0, 0, args.Size.X, args.Size.Y);   

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "muQQpWpp59Q0wckFSEDG2BqwaktCau7v9svB1oIrYGrNkZmSy4BrOnz+zkwprfcFk0QxkR5MKWso9zrxBnWxsA==",
+  "dgSpecHash": "YI2pEVmfZJU2zgMOsCwTFu4W6pFUX3438Bmz4l1vmjcc/S++nP0zIzummKwNEisGCXrZWe/J2ezLEKXvrQoxWg==",
   "success": true,
-  "projectFilePath": "C:\\Users\\Ikars\\Desktop\\Programming\\csharp\\Game2D-master\\Game2D.csproj",
+  "projectFilePath": "C:\\Users\\Ikars\\Desktop\\Programming\\Game2D\\Game2D.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Ikars\\.nuget\\packages\\opentk\\4.6.7\\opentk.4.6.7.nupkg.sha512",
     "C:\\Users\\Ikars\\.nuget\\packages\\opentk.compute\\4.6.7\\opentk.compute.4.6.7.nupkg.sha512",

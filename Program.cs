@@ -18,7 +18,7 @@ namespace Game
             MainLogger = new Logger();
             MainProfiler = new Profiler();
 
-            using (Core.Game game = new Core.Game("SimpleGame2D", WIDTH, HEIGHT)) {
+            using (Core.Application game = new Core.Application("SimpleGame2D", WIDTH, HEIGHT)) {
                 MainRenderer = game.Renderer;
                 game.Run();
             }

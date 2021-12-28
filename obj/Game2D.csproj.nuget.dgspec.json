@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Ikars\\Desktop\\Programming\\csharp\\Game2D-master\\Game2D.csproj": {}
+    "C:\\Users\\Ikars\\Desktop\\Programming\\Game2D\\Game2D.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Ikars\\Desktop\\Programming\\csharp\\Game2D-master\\Game2D.csproj": {
+    "C:\\Users\\Ikars\\Desktop\\Programming\\Game2D\\Game2D.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Ikars\\Desktop\\Programming\\csharp\\Game2D-master\\Game2D.csproj",
+        "projectUniqueName": "C:\\Users\\Ikars\\Desktop\\Programming\\Game2D\\Game2D.csproj",
         "projectName": "Game2D",
-        "projectPath": "C:\\Users\\Ikars\\Desktop\\Programming\\csharp\\Game2D-master\\Game2D.csproj",
+        "projectPath": "C:\\Users\\Ikars\\Desktop\\Programming\\Game2D\\Game2D.csproj",
         "packagesPath": "C:\\Users\\Ikars\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Ikars\\Desktop\\Programming\\csharp\\Game2D-master\\obj\\",
+        "outputPath": "C:\\Users\\Ikars\\Desktop\\Programming\\Game2D\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Ikars\\AppData\\Roaming\\NuGet\\NuGet.Config"

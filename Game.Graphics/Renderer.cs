@@ -63,8 +63,7 @@ namespace Game.Graphics {
         public Texture[] TextureUnits { get; set; }
         public int TextureUnitIndex { get; set; }
         public QuadVertex[] VertexArray { get; set; }
-        public ArrayBufferWriter<QuadVertex> VertexMem;
-        public IntPtr VertexArrayPtr { get; set; }
+        public GCHandle VertexArrayHandle { get; private set; }
         public int VertexCount { get; set; }
         public int Indices { get; set; }
         public readonly int MAX_TEXTURE_UNITS { get; }
@@ -106,11 +105,10 @@ namespace Game.Graphics {
             };
 
             this.DefaultTextureUV = Renderer.DefaultUVCoords;
-            this.VertexMem = new ArrayBufferWriter<QuadVertex>(this.MAX_VERTICES);
-            this.VertexMem.Write<QuadVertex>(new QuadVertex(Vector2.Zero, Vector4.One, Vector2.Zero, 0).GetSpan());
+
+            // Create quad vertex array pin it to get its pointer
             this.VertexArray = new QuadVertex[MAX_VERTICES];
-            this.VertexArrayPtr = IOUtils.GetObjectPtr(this.VertexArray);
-            GC.KeepAlive(this.VertexArrayPtr);
+            this.VertexArrayHandle = GCHandle.Alloc(this.VertexArray, GCHandleType.Pinned);
 
             this.DispatchedQuads = new List<DrawQuad2D>();
             this.TextureUnits = new Texture[MAX_TEXTURE_UNITS];
@@ -141,6 +139,10 @@ namespace Game.Graphics {
         }
         public void Dispose() {
             GameHandler.Logger.Warn("Disposing render storage! Is this intentional?");
+            this.VertexArrayHandle.Free();
+            foreach (Texture tex in this.Textures.Values) {
+                tex.Dispose();
+            }
         }
     }
     public class Renderer {
@@ -274,7 +276,7 @@ namespace Game.Graphics {
                 this.VertexArray.Bind();
                 this.VertexBuffer.Bind();
                 unsafe {
-                    this.VertexBuffer.SetDataQuadVertex(this.Storage.VertexArrayPtr, sizeof(QuadVertex) * this.Storage.VertexCount);
+                    this.VertexBuffer.SetDataQuadVertex(this.Storage.VertexArrayHandle.AddrOfPinnedObject(), sizeof(QuadVertex) * this.Storage.VertexCount);
                 }
                 
                 // Bind textures
@@ -324,9 +326,6 @@ namespace Game.Graphics {
         }
         public void Dispose() {
             this.RenderCamera.Dispose();
-            foreach (Texture tex in this.Storage.Textures.Values) {
-                tex.Dispose();
-            }
             this.Storage.Dispose();
         }
         public void AddTexture(string name, Texture tex) {

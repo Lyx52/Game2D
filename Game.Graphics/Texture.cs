@@ -2,7 +2,6 @@ using OpenTK.Graphics.OpenGL4;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using System.Collections.Generic;
 using System.IO;
 using System;
 using System.Runtime.InteropServices;
@@ -75,11 +74,11 @@ namespace Game.Graphics {
             this.GenerateMipmap();  
         }
         public void Dispose() {
+            GameHandler.Logger.Warn("Disposing texture! Is this intentional?");
             GL.DeleteTexture(this.textureID);
         }
         public unsafe static Texture LoadTexture(string filePath) {
             try {
-
                 // Load img and flip it
                 Image<Rgba32> img = (Image<Rgba32>) Image.Load(filePath);
                 img.Mutate(x => x.Flip(FlipMode.Vertical));

@@ -14,8 +14,10 @@ namespace Game.Core {
         public MouseHandler Mouse { get; }
         public Renderer Renderer { get; }
         public EntityManager EntityHandler { get; }
+        public Player player;
+        public SpriteSheet spriteSheet;
+        public Texture appletex;
         public Application(string title, int width, int height) : base(GameWindowSettings.Default, NativeWindowSettings.Default) {
-            GameHandler.Logger.Info($"OS Version: {System.Environment.OSVersion}");
             this.Size = new Vector2i(width, height);
             this.Title = title;
             this.UpdateFrequency = 30;
@@ -35,7 +37,12 @@ namespace Game.Core {
             // Create renderer
             this.Renderer = new Renderer(GameHandler.MAX_BUFFER_MEMORY, Size.X, Size.Y);
             this.Resize += this.Renderer.OnResize;
-            
+            Renderer.LoadTexture("grass", "./res/textures/grass.png");
+            Renderer.LoadTexture("apple", "./res/textures/apple.png");
+            this.spriteSheet = new SpriteSheet(Renderer.GetTexture("grass"), 2, 2);
+            // this.Renderer.LoadTexture("grass", "./res/textures/grass.png");
+            // this.Renderer.LoadTexture("apple", "./res/textures/apple.png");
+            // this.Renderer.LoadTexture("spritesheet", "./res/textures/tile_spritesheet.png");
             // // // Setup entity handler
             // this.EntityHandler = new EntityManager();
             // Random r = new Random();
@@ -46,37 +53,44 @@ namespace Game.Core {
             //     this.EntityHandler.AddEntity(entity);
             // }
             
-            // // Add player entity
-            // Player player = new Player(0, 0);
-            // player.Sprite.SpriteTexture = this.Renderer.APPLE_TEXTURE;
-            // player.Controller.AttachKeyboardHandler(this.Keyboard);
-            // player.Controller.AttachMouseHandler(this.Mouse);
+            // Add player entity
+            player = new Player(0, 0);
+            player.Sprite.SpriteTexture = Renderer.GetTexture("apple");
+            player.Controller.AttachKeyboardHandler(this.Keyboard);
+            player.Controller.AttachMouseHandler(this.Mouse);
             // // Vector2 projectionSize = this.Size / 8;
             // this.EntityHandler.AddEntity(player);
-        }
-        protected override void OnLoad()
-        {
-            base.OnLoad();
+            
+            // Display system info
+            GameHandler.Logger.Info($"OS Version: {System.Environment.OSVersion}");
+            GLHelper.DisplayGLInfo();
         }
         protected override void OnRenderFrame(FrameEventArgs args)
         {
             
             GL.Clear(ClearBufferMask.ColorBufferBit);
-            Renderer.StartScene();
+            Renderer.StartScene(player.KinematicBody.Position);
             for (int i = 0; i < 2; i++)
                 for (int r = 0; r < 2; r++)
-                    Renderer.DispatchQuad(new Quad2D(new Vector2(i * 1.05f, r * 1.05f), Vector2.One, Renderer.spriteSheet.SpriteTexture, Renderer.spriteSheet.GetSubSprite(i, r), new Vector4(1.0f, 1.0f, 1.0f, 1.0f), layer:RenderLayer.BACKGROUND));
-
+                    Renderer.DispatchQuad(new DrawQuad2D(new Vector2(i * 1.05f, r * 1.05f), Vector2.One, this.spriteSheet.SpriteTexture, this.spriteSheet.GetSubSprite(i, r), new Vector4(1.0f, 1.0f, 1.0f, 1.0f), layer:RenderLayer.BACKGROUND));
+            this.player.Draw(Renderer);
             Renderer.EndScene();
             base.OnRenderFrame(args);
             Context.SwapBuffers();
         }
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
+            player.Update(args.Time);
+            this.UpdateTitle(args);
             base.OnUpdateFrame(args);
         }
         private void UpdateTitle(FrameEventArgs args) {
-            this.Title = $"FPS: {Math.Round(1 / this.RenderTime, 2)}, UPS: {Math.Round(1 / this.UpdateTime, 2)}, Flushes: {this.Renderer.TotalFlushes}, Mem: {Math.Round((double)System.GC.GetTotalMemory(false) / (1000 * 1000), 2)}Mb";
+            this.Title = $"FPS: {Math.Round(1 / this.RenderTime, 2)}, UPS: {Math.Round(1 / this.UpdateTime, 2)}, Flushes: {this.Renderer.TotalFlushes}, Mem: {Math.Round((double)System.GC.GetTotalMemory(false) / (1000 * 1000), 2)}Mb, Vertices: {this.Renderer.PrevVertexCount}";
+        }
+        protected override void OnClosed()
+        {
+            this.Renderer.Dispose();
+            base.OnClosed();
         }
     }
 }

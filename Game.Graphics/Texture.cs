@@ -4,28 +4,31 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System.Collections.Generic;
 using System.IO;
+using System;
 
 namespace Game.Graphics {
     public class Texture {
         private readonly int textureID;
         public readonly int width;
         public readonly int height;
-
-        public Texture(int width, int height) {
+        private static List<byte> pixels;
+        public Texture(int width, int height) : this(width, height, TextureWrapMode.ClampToEdge, TextureMinFilter.Nearest, TextureMagFilter.Nearest) {}
+        public Texture(int width, int height, TextureWrapMode wrapMode, TextureMinFilter minFilter, TextureMagFilter magFilter) {
             this.width = width;
             this.height = height;
             this.textureID = GL.GenTexture();
             
             GL.BindTexture(TextureTarget.Texture2D, this.textureID);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (float)TextureWrapMode.ClampToEdge);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (float)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)minFilter);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)magFilter);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (float)wrapMode);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (float)wrapMode);
             GL.BindTexture(TextureTarget.Texture2D, 0);
         }
         public static Texture WhiteTexture {
+            // NOTE: Use this with caution, it creates new texture instance everytime!
             get {
-                Texture texture = new Texture(1, 1);
+                Texture texture = new Texture(1, 1, TextureWrapMode.Repeat, TextureMinFilter.Nearest, TextureMagFilter.Nearest);
                 texture.SetData(new byte[4] {0xFF, 0xFF, 0xFF, 0xFF}, 1, 1);
                 return texture;       
             }
@@ -72,10 +75,10 @@ namespace Game.Graphics {
             try {
                 Image<Rgba32> image = Image.Load<Rgba32>(filePath);
                 image.Mutate(x => x.Flip(FlipMode.Vertical));
-
+                
                 //Convert ImageSharp's format into a byte array, so we can use it with OpenGL.
-                List<byte> pixels = new List<byte>(4 * image.Width * image.Height);
-
+                pixels = new List<byte>(4 * image.Width * image.Height);
+                
                 for (int y = 0; y < image.Height; y++) {
                     var row = image.GetPixelRowSpan(y);
 
@@ -90,6 +93,7 @@ namespace Game.Graphics {
                 texture.SetData(pixels.ToArray(), image.Width, image.Height);
 
                 GLHelper.CheckGLError($"Texture.LoadTexture<{filePath}>");
+                GC.KeepAlive(pixels);
                 return texture;
             } catch(IOException e) {
                 GameHandler.Logger.Error($"Error while opening image! {e}");

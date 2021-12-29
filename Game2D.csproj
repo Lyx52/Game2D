@@ -3,7 +3,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DefineConstants>OPENGL_DEBUG</DefineConstants>
+    <!-- <DefineConstants>OPENGL_DEBUG</DefineConstants> -->
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="OpenTK" Version="4.6.7"/>

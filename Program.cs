@@ -22,7 +22,7 @@ namespace Game
 
             using (Application game = new Application("SimpleGame2D", WIDTH, HEIGHT)) {
                 MainRenderer = game.Renderer;
-                game.Run();
+                game.Run(); 
             }
             MainLogger.Close();
         }

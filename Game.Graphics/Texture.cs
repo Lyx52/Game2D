@@ -5,13 +5,13 @@ using SixLabors.ImageSharp.Processing;
 using System.Collections.Generic;
 using System.IO;
 using System;
+using System.Runtime.InteropServices;
 
 namespace Game.Graphics {
-    public class Texture {
+    public class Texture : IDisposable {
         private readonly int textureID;
         public readonly int width;
         public readonly int height;
-        private static List<byte> pixels;
         public Texture(int width, int height) : this(width, height, TextureWrapMode.ClampToEdge, TextureMinFilter.Nearest, TextureMagFilter.Nearest) {}
         public Texture(int width, int height, TextureWrapMode wrapMode, TextureMinFilter minFilter, TextureMagFilter magFilter) {
             this.width = width;
@@ -30,6 +30,7 @@ namespace Game.Graphics {
             get {
                 Texture texture = new Texture(1, 1, TextureWrapMode.Repeat, TextureMinFilter.Nearest, TextureMagFilter.Nearest);
                 texture.SetData(new byte[4] {0xFF, 0xFF, 0xFF, 0xFF}, 1, 1);
+                GC.KeepAlive(texture);
                 return texture;       
             }
         }
@@ -63,37 +64,41 @@ namespace Game.Graphics {
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
             this.Unbind();
         }
+        public void SetData(IntPtr data, int width, int height) {
+            GL.TextureStorage2D(this.textureID, 1, SizedInternalFormat.Rgba8, width, height);
+            GL.TextureSubImage2D(this.textureID, 0, 0, 0, width, height, PixelFormat.Rgba, PixelType.UnsignedByte, data);
+            this.GenerateMipmap();  
+        }
         public void SetData(in byte[] data, int width, int height) {
             GL.TextureStorage2D(this.textureID, 1, SizedInternalFormat.Rgba8, width, height);
             GL.TextureSubImage2D(this.textureID, 0, 0, 0, width, height, PixelFormat.Rgba, PixelType.UnsignedByte, data);
             this.GenerateMipmap();  
         }
-        public void Delete() {
+        public void Dispose() {
             GL.DeleteTexture(this.textureID);
         }
-        public static Texture LoadTexture(string filePath) {
+        public unsafe static Texture LoadTexture(string filePath) {
             try {
-                Image<Rgba32> image = Image.Load<Rgba32>(filePath);
-                image.Mutate(x => x.Flip(FlipMode.Vertical));
-                
-                //Convert ImageSharp's format into a byte array, so we can use it with OpenGL.
-                pixels = new List<byte>(4 * image.Width * image.Height);
-                
-                for (int y = 0; y < image.Height; y++) {
-                    var row = image.GetPixelRowSpan(y);
 
-                    for (int x = 0; x < image.Width; x++) {
-                        pixels.Add(row[x].R);
-                        pixels.Add(row[x].G);
-                        pixels.Add(row[x].B);
-                        pixels.Add(row[x].A);
-                    }
+                // Load img and flip it
+                Image<Rgba32> img = (Image<Rgba32>) Image.Load(filePath);
+                img.Mutate(x => x.Flip(FlipMode.Vertical));
+                
+                // Create texture
+                Texture texture = new Texture(img.Width, img.Height);
+
+                // Get pointer to image data
+                fixed (void* data = &MemoryMarshal.GetReference(img.GetPixelRowSpan(0)))
+                {
+                    // Set data using IntPtr
+                    texture.SetData((IntPtr)data, img.Width, img.Height);
                 }
-                Texture texture = new Texture(image.Width, image.Height);
-                texture.SetData(pixels.ToArray(), image.Width, image.Height);
+
+                //Deleting the img and collect garbage
+                img.Dispose();
+                GC.Collect();
 
                 GLHelper.CheckGLError($"Texture.LoadTexture<{filePath}>");
-                GC.KeepAlive(pixels);
                 return texture;
             } catch(IOException e) {
                 GameHandler.Logger.Error($"Error while opening image! {e}");

@@ -2,7 +2,7 @@ using OpenTK.Graphics.OpenGL4;
 using System;
 
 namespace Game.Graphics {
-    public struct VertexBuffer {
+    public struct VertexBuffer : IDisposable {
         public int Size { get; set; }
         public readonly int vboID { get; }
         public BufferLayout Layout { get; set; }
@@ -41,6 +41,9 @@ namespace Game.Graphics {
 
         public void Unbind() {
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+        }
+        public void Dispose() {
+            GL.DeleteBuffer(this.vboID);
         }
     }
 }

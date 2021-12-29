@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using Game.Utils;
 using System.Runtime.InteropServices;
-
+using System.Buffers;
 namespace Game.Graphics {
     public enum QuadMode {
         CENTER,
@@ -52,11 +52,18 @@ namespace Game.Graphics {
             this.TexCoord = texCoord;
             this.Position = position;
         }
+        public unsafe ReadOnlySpan<QuadVertex> GetSpan() {
+            fixed (QuadVertex* ptr = &this)
+            {
+                return new ReadOnlySpan<QuadVertex>(ptr, sizeof(QuadVertex)); // If on the heap, we're doomed as returning will unpin the memory.
+            }
+        }
     }
-    public struct RenderStorage {
+    public struct RenderStorage : IDisposable {
         public Texture[] TextureUnits { get; set; }
         public int TextureUnitIndex { get; set; }
         public QuadVertex[] VertexArray { get; set; }
+        public ArrayBufferWriter<QuadVertex> VertexMem;
         public IntPtr VertexArrayPtr { get; set; }
         public int VertexCount { get; set; }
         public int Indices { get; set; }
@@ -99,6 +106,8 @@ namespace Game.Graphics {
             };
 
             this.DefaultTextureUV = Renderer.DefaultUVCoords;
+            this.VertexMem = new ArrayBufferWriter<QuadVertex>(this.MAX_VERTICES);
+            this.VertexMem.Write<QuadVertex>(new QuadVertex(Vector2.Zero, Vector4.One, Vector2.Zero, 0).GetSpan());
             this.VertexArray = new QuadVertex[MAX_VERTICES];
             this.VertexArrayPtr = IOUtils.GetObjectPtr(this.VertexArray);
             GC.KeepAlive(this.VertexArrayPtr);
@@ -129,6 +138,9 @@ namespace Game.Graphics {
         }
         public bool IsOverflow() {
             return (this.VertexCount + 4) > this.MAX_VERTICES || this.TextureUnitIndex >= this.MAX_TEXTURE_UNITS;
+        }
+        public void Dispose() {
+            GameHandler.Logger.Warn("Disposing render storage! Is this intentional?");
         }
     }
     public class Renderer {
@@ -188,7 +200,6 @@ namespace Game.Graphics {
                 quadIndices[i + 5] = (uint)offset + 3;
                 offset += 4;
             }
-            GC.KeepAlive(quadIndices);
             this.IndexBuffer = new IndexBuffer(sizeof(uint) * this.Storage.MAX_INDICES, data:quadIndices);
             this.VertexArray.SetIndexBuffer(this.IndexBuffer);
             unsafe {
@@ -314,8 +325,9 @@ namespace Game.Graphics {
         public void Dispose() {
             this.RenderCamera.Dispose();
             foreach (Texture tex in this.Storage.Textures.Values) {
-                tex.Delete();
+                tex.Dispose();
             }
+            this.Storage.Dispose();
         }
         public void AddTexture(string name, Texture tex) {
             if (!this.Storage.Textures.TryAdd(name, tex)) {

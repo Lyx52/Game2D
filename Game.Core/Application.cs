@@ -7,6 +7,7 @@ using Game.Graphics;
 using Game.Entity;
 using Game.Utils;
 using System;
+using System.ComponentModel;
 
 namespace Game.Core {
     public class Application : GameWindow {
@@ -87,10 +88,11 @@ namespace Game.Core {
         private void UpdateTitle(FrameEventArgs args) {
             this.Title = $"FPS: {Math.Round(1 / this.RenderTime, 2)}, UPS: {Math.Round(1 / this.UpdateTime, 2)}, Flushes: {this.Renderer.TotalFlushes}, Mem: {Math.Round((double)System.GC.GetTotalMemory(false) / (1000 * 1000), 2)}Mb, Vertices: {this.Renderer.PrevVertexCount}";
         }
-        protected override void OnClosed()
+        protected override void OnClosing(CancelEventArgs e)
         {
+            GameHandler.Logger.Debug("Closing window!");
             this.Renderer.Dispose();
-            base.OnClosed();
+            base.OnClosing(e);
         }
     }
 }

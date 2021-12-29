@@ -1,8 +1,9 @@
 using OpenTK.Graphics.OpenGL4;
 using System.Collections.Generic;
+using System;
 
 namespace Game.Graphics {
-    public class VertexArray {
+    public class VertexArray : IDisposable {
         public readonly int vaoID;
         private List<VertexBuffer> vertexBuffers;
         private IndexBuffer indexBuffer;
@@ -34,6 +35,9 @@ namespace Game.Graphics {
                 GLHelper.CheckGLError("SetAttribPointer");
             }
             this.vertexBuffers.Add(buffer);
+        }
+        public void Dispose() {
+            GL.DeleteVertexArray(this.vaoID);
         }
     }
 }

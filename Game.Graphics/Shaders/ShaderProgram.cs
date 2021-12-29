@@ -1,11 +1,11 @@
-using System.IO;
 using System.Collections.Generic;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using Game.Utils;
+using System;
 
 namespace Game.Graphics {
-    public class ShaderProgram {
+    public class ShaderProgram : IDisposable {
         public readonly int programID;
         private Dictionary<string, int> attribLocations;
         private Dictionary<string, int> uniformLocations;
@@ -78,6 +78,9 @@ namespace Game.Graphics {
         }
         public void SetSampler2D(int textureUnit, string varName) {
             GL.Uniform1(this.GetUniformLocation(varName), textureUnit);
+        }
+        public void Dispose() {
+            GL.DeleteProgram(this.programID);
         }
     }
 }

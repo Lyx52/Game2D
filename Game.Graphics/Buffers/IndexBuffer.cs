@@ -2,7 +2,7 @@ using OpenTK.Graphics.OpenGL4;
 using System;
 
 namespace Game.Graphics {
-     public struct IndexBuffer {
+     public struct IndexBuffer : IDisposable {
         public int Count { get; set; }
         public readonly int eboID { get; }
         public BufferLayout Layout { get; set; }
@@ -39,6 +39,9 @@ namespace Game.Graphics {
 
         public void Unbind() {
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
-        }  
+        }
+        public void Dispose() {
+            GL.DeleteBuffer(this.eboID);
+        }
     }
 }

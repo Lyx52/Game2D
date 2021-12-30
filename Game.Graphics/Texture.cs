@@ -48,6 +48,16 @@ namespace Game.Graphics {
                 return this.height;
             }
         }
+        public override bool Equals(object obj)
+        {
+            bool value = this.textureID == ((Texture)obj).textureID;
+            // Two textures must not have the same textureID!
+            return value;
+        }
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
 
         public void BindToUnit(int slot) {
             GL.BindTextureUnit(slot, this.textureID);

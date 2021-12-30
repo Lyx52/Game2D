@@ -5,7 +5,6 @@ using OpenTK.Graphics.OpenGL4;
 using Game.Input;
 using Game.Graphics;
 using Game.Entity;
-using Game.Utils;
 using System;
 using System.ComponentModel;
 
@@ -15,9 +14,7 @@ namespace Game.Core {
         public MouseHandler Mouse { get; }
         public Renderer Renderer { get; }
         public EntityManager EntityHandler { get; }
-        public Player player;
         public SpriteSheet spriteSheet;
-        public Texture appletex;
         public Application(string title, int width, int height) : base(GameWindowSettings.Default, NativeWindowSettings.Default) {
             this.Size = new Vector2i(width, height);
             this.Title = title;
@@ -41,26 +38,24 @@ namespace Game.Core {
             Renderer.LoadTexture("grass", "./res/textures/grass.png");
             Renderer.LoadTexture("apple", "./res/textures/apple.png");
             this.spriteSheet = new SpriteSheet(Renderer.GetTexture("grass"), 2, 2);
-            // this.Renderer.LoadTexture("grass", "./res/textures/grass.png");
-            // this.Renderer.LoadTexture("apple", "./res/textures/apple.png");
-            // this.Renderer.LoadTexture("spritesheet", "./res/textures/tile_spritesheet.png");
             // // // Setup entity handler
-            // this.EntityHandler = new EntityManager();
-            // Random r = new Random();
-            // // NOTE: Each entity is about 470-500 bytes
-            // for (int i = 0; i < 10000; i++) {
-            //     TestEntity entity = new TestEntity(i, (float)r.NextDouble());
-            //     entity.Sprite.SpriteTexture = this.Renderer.DIRT_TEXTURE;
-            //     this.EntityHandler.AddEntity(entity);
-            // }
+            this.EntityHandler = new EntityManager();
+            Random r = new Random();
             
             // Add player entity
-            player = new Player(0, 0);
+            Player player = new Player(0, 0);
             player.Sprite.SpriteTexture = Renderer.GetTexture("apple");
             player.Controller.AttachKeyboardHandler(this.Keyboard);
             player.Controller.AttachMouseHandler(this.Mouse);
             // // Vector2 projectionSize = this.Size / 8;
-            // this.EntityHandler.AddEntity(player);
+            this.EntityHandler.AddEntity(player);
+            
+            // NOTE: Each entity is about 470-500 bytes
+            for (int i = 0; i < 100; i++) {
+                TestEntity entity = new TestEntity(i, (float)r.NextDouble());
+                entity.Sprite.SpriteTexture = this.Renderer.GetTexture("grass");
+                this.EntityHandler.AddEntity(entity);
+            }
             
             // Display system info
             GameHandler.Logger.Info($"OS Version: {System.Environment.OSVersion}");
@@ -70,18 +65,18 @@ namespace Game.Core {
         {
             
             GL.Clear(ClearBufferMask.ColorBufferBit);
-            Renderer.StartScene(player.KinematicBody.Position);
+            Renderer.StartScene(this.EntityHandler.GetPlayer().KinematicBody.Position);
             for (int i = 0; i < 2; i++)
                 for (int r = 0; r < 2; r++)
                     Renderer.DispatchQuad(new DrawQuad2D(new Vector2(i * 1.05f, r * 1.05f), Vector2.One, this.spriteSheet.SpriteTexture, this.spriteSheet.GetSubSprite(i, r), new Vector4(1.0f, 1.0f, 1.0f, 1.0f), layer:RenderLayer.BACKGROUND));
-            this.player.Draw(Renderer);
+            this.EntityHandler.Render(this.Renderer);
             Renderer.EndScene();
             base.OnRenderFrame(args);
             Context.SwapBuffers();
         }
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
-            player.Update(args.Time);
+            this.EntityHandler.Update(args.Time);
             this.UpdateTitle(args);
             base.OnUpdateFrame(args);
         }
@@ -92,6 +87,7 @@ namespace Game.Core {
         {
             GameHandler.Logger.Debug("Closing window!");
             this.Renderer.Dispose();
+            this.EntityHandler.Dispose();
             base.OnClosing(e);
         }
     }

@@ -71,6 +71,16 @@ namespace Game.Utils {
             return output;
         }
     }
+    public static class ArrayUtils {
+        public static int IndexOf<T>(object[] arr, object obj) {
+            for (int i = 0; i < arr.Length; i++) {
+                if (((T)arr[i]).Equals((T)obj)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+    }
     public static class MathUtils {
         public static double ToRadians(double value) {
             return (Math.PI / 180) * value;

@@ -5,15 +5,16 @@ using Game.Utils;
 namespace Game.Entity {
     public class Player : DrawableEntity {
         public Player(float x, float y) : base() {
-            this.AttachComponent(new KinematicBody(x, y), "KinematicBody");
-            this.AttachComponent(new EntityController(this), "Controller");
+            this.AttachComponent(new KinematicBody(x, y));
+            this.AttachComponent(new EntityController(this));
+            this.KinematicBody.Size = new Vector2(0.5f, 0.5f);
             this.Layer = RenderLayer.LAYER_2;
         }
         public override void Draw(Renderer renderer) {
             renderer.DispatchQuad(this.GetRenderQuad(this.KinematicBody));         
         }
         public EntityController Controller {
-            get { return (EntityController)this.GetComponent("Controller"); }
+            get { return (EntityController)this.GetComponent("EntityController"); }
         }
         public KinematicBody KinematicBody {
             get { return (KinematicBody)this.GetComponent("KinematicBody"); }
@@ -40,6 +41,10 @@ namespace Game.Entity {
         }
         public override string GetParrent() {
             return base.ToString();
+        }
+        public override bool InRange(Entity target, float range)
+        {
+            return Vector2.Distance(this.KinematicBody.Position, ((KinematicBody)target.GetComponent("KinematicBody")).Position) <= range;
         }
     }
 }

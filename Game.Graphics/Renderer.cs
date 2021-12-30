@@ -28,7 +28,7 @@ namespace Game.Graphics {
         public Vector4 Color;
         public float Rotation;
         public int Layer;
-        public DrawQuad2D(Vector2 position, Vector2 size, Texture texture, Vector2[] textureUV, Vector4 color, float rotation=0, RenderLayer layer=RenderLayer.BACKGROUND) {
+        public DrawQuad2D(in Vector2 position, in Vector2 size, in Texture texture, in Vector2[] textureUV, in Vector4 color, in float rotation=0, in RenderLayer layer=RenderLayer.BACKGROUND) {
             this.Position = position;
             this.Size = size;
             this.Texture = texture;
@@ -46,17 +46,11 @@ namespace Game.Graphics {
         public Vector4 Color;
         public Vector2 TexCoord;
         public float TexIndex;
-        public QuadVertex(Vector2 position, Vector4 color, Vector2 texCoord, float texIndex) {
+        public QuadVertex(in Vector2 position, in Vector4 color, in Vector2 texCoord, in float texIndex) {
             this.Color = color;
             this.TexIndex = texIndex;
             this.TexCoord = texCoord;
             this.Position = position;
-        }
-        public unsafe ReadOnlySpan<QuadVertex> GetSpan() {
-            fixed (QuadVertex* ptr = &this)
-            {
-                return new ReadOnlySpan<QuadVertex>(ptr, sizeof(QuadVertex)); // If on the heap, we're doomed as returning will unpin the memory.
-            }
         }
     }
     public struct RenderStorage : IDisposable {
@@ -117,8 +111,9 @@ namespace Game.Graphics {
             this.Textures.Add("default", Texture.WhiteTexture);
             GC.KeepAlive(this.Textures);
 
+            // Fill texture units with the default texture(Must be the original one with the original textureID!)
             for (int i = 0; i < MAX_TEXTURE_UNITS; i ++) {
-                this.TextureUnits[i] = Texture.WhiteTexture;
+                this.TextureUnits[i] = this.Textures["default"];
             }
             GC.KeepAlive(this);
         }
@@ -159,7 +154,6 @@ namespace Game.Graphics {
         public OrthoCamera RenderCamera;
         public int PrevVertexCount = 0;
         private int CurrentVertexCount = 0;
-        public WeakReference objRef;
         public Renderer(int bufferSize, int width, int height) {
             DefaultUVCoords = new Vector2[4] {
                 new Vector2(1.0f, 1.0f),
@@ -232,6 +226,7 @@ namespace Game.Graphics {
         }
         public void DrawQuad(DrawQuad2D quad) {
             if (this.Storage.IsOverflow()) {
+                GameHandler.Logger.Debug($"Overflow: {this.Storage.TextureUnitIndex}");
                 this.NextBatch();
             }
             float textureIndex = this.AddUniqueTexture(quad.Texture);
@@ -297,16 +292,16 @@ namespace Game.Graphics {
             GL.DrawArrays(type, 0, this.Storage.VertexCount);
         }
         private int AddUniqueTexture(Texture texture) {
-            if (Array.IndexOf(this.Storage.TextureUnits, texture) == -1) {
+            if (ArrayUtils.IndexOf<Texture>(this.Storage.TextureUnits, texture) == -1) {
                 this.Storage.TextureUnits[this.Storage.TextureUnitIndex++] = texture;
-            } else if (this.Storage.TextureUnits[this.Storage.TextureUnitIndex] != this.GetTexture("default")) {
+            } else if (!this.Storage.TextureUnits[this.Storage.TextureUnitIndex].Equals(this.GetTexture("default"))) {
                 this.Storage.TextureUnitIndex++;
             }
             return GetTextureUnit(texture);
         }
         public int GetTextureUnit(Texture texture) {
             for (int i = 0; i < this.Storage.TextureUnitIndex; i++) {
-                if (this.Storage.TextureUnits[i] == texture) {
+                if (this.Storage.TextureUnits[i].Equals(texture)) {
                     return i;
                 }
             }

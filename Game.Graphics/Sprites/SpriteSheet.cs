@@ -15,6 +15,7 @@ namespace Game.Graphics {
             this.tileUV = new Vector2[rows][][];
             this.SubSprites = new Dictionary<string, Vector2i>();
             this.CalculateUVCoords();
+            GC.KeepAlive(this);
         }
 
         private void CalculateUVCoords() {
@@ -36,7 +37,8 @@ namespace Game.Graphics {
                 }
                 TileY += sizeNormalized.Y;
             }
-            
+
+            GC.Collect();
             // TODO: Check if we still need to reverse the array
             // Array.Reverse(this.tileUV);
         }

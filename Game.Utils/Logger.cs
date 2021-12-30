@@ -4,7 +4,7 @@ using System.IO;
 #endif
 
 namespace Game.Utils {
-    public class Logger {
+    public class Logger : IDisposable {
         public enum LogLevel {
             INFO,
             WARN,
@@ -55,6 +55,13 @@ namespace Game.Utils {
         public void Critical(string message) {
             this.Log(message, LogLevel.CRITICAL);
             Environment.Exit(1);
+        }
+        public void Assert(bool assertion, string errorMessage) {
+            if (!assertion)
+                this.Critical($"ASSERTION FAILED: {errorMessage}");
+        }
+        public void Dispose() {
+            this.Close();
         }
     }
 }

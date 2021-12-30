@@ -1,8 +1,9 @@
 using OpenTK.Mathematics;
 using Game.Utils;
+using System.Runtime.InteropServices;
 using System;
 
-namespace Game.Entity {
+namespace Game.Graphics {
     public struct CameraQuad {
         public Vector2 Min;
         public Vector2 Max;
@@ -17,13 +18,13 @@ namespace Game.Entity {
             this.Max.X = right;
             this.Max.Y = bottom;
         }
-    } 
-    public class OrthoCamera : EntityComponent {
+    }
+    public class OrthoCamera {
         private Matrix4 projection;
         private Matrix4 view;
         public Matrix4 ViewProjection { get; set; }
+        public IntPtr ViewProjectionPtr { get; protected set; }
         public double Rotation { get; set; }
-        public IntPtr PtrViewProjection { get; set; }
         public CameraQuad CameraQuad;
         public OrthoCamera(float left, float right, float bottom, float top) {
             this.projection = Matrix4.CreateOrthographicOffCenter(left, right, bottom, top, 1.0f, -1.0f);
@@ -31,7 +32,10 @@ namespace Game.Entity {
             this.view = Matrix4.Identity;
             this.Rotation = 0;
             this.ViewProjection = view * projection;
-            this.PtrViewProjection = IOUtils.GetObjectPtr(this.ViewProjection);
+
+            // Allocate unmanaged memory for view projection matrix
+            this.ViewProjectionPtr = Marshal.AllocHGlobal(Marshal.SizeOf(this.ViewProjection));
+            this.Recalculate(Vector2.Zero);
         }
         public void SetProjection(float left, float right, float bottom, float top) {
             this.projection = Matrix4.CreateOrthographicOffCenter(left, right, bottom, top, 1.0f, -1.0f);
@@ -44,10 +48,15 @@ namespace Game.Entity {
             Matrix4 mult = Matrix4.Mult(translation, rotation);
             this.view = Matrix4.Invert(mult);
             this.ViewProjection = view * projection;
-            this.PtrViewProjection = IOUtils.GetObjectPtr(this.ViewProjection);
+
+            // We copy matrix into unmanaged memory, deleting managed version, thisway we avoid garbage collector mem leaks
+            Marshal.StructureToPtr<Matrix4>(this.ViewProjection, this.ViewProjectionPtr, true);
         }
-        public override string ToString() {
-            return "OrthoCamera";
+        public unsafe IntPtr GetViewProjection() {
+            return this.ViewProjectionPtr;
+        }
+        public void Dispose() {
+            Marshal.FreeHGlobal(this.ViewProjectionPtr);
         }
     }
 }

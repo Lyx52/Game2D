@@ -4,7 +4,7 @@ using OpenTK.Mathematics;
 namespace Game.Entity {
     public class TestEntity : DrawableEntity {
         public TestEntity(float x, float y) {
-            this.AttachComponent(new KinematicBody(x, y), "KinematicBody");
+            this.AttachComponent(new KinematicBody(x, y));
             this.Layer = RenderLayer.LAYER_1;
         }
         public override void Update(double dt) {
@@ -20,6 +20,10 @@ namespace Game.Entity {
         }
         public override string GetParrent() {
             return base.ToString();
+        }
+        public override bool InRange(Entity target, float range)
+        {
+            return Vector2.Distance(this.KinematicBody.Position, ((KinematicBody)target.GetComponent("KinematicBody")).Position) <= range;
         }
     }
 }

@@ -17,8 +17,11 @@ namespace Game.Entity {
         public override string ToString() {
             return "DrawableEntity";
         }
-        public Quad2D GetRenderQuad(PhysicalBody body) {
-            return new Quad2D(body.Position, body.Size, this.Sprite.SpriteTexture, this.TexCoords, this.MaskColor, rotation:body.Rotation, layer:this.Layer);
+        public DrawQuad2D GetRenderQuad(Vector2 position, Vector2 size, float rotation) {
+            return new DrawQuad2D(position, size, this.Sprite.SpriteTexture, this.TexCoords, this.MaskColor, rotation:rotation, layer:this.Layer);
+        }
+        public DrawQuad2D GetRenderQuad(PhysicalBody body) {
+            return this.GetRenderQuad(body.Position, body.Size, body.Rotation);
         }
         public override string GetParrent()
         {

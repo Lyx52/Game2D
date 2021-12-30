@@ -2,7 +2,7 @@ using OpenTK.Graphics.OpenGL4;
 using System;
 
 namespace Game.Graphics {
-    public struct UniformBuffer {
+    public struct UniformBuffer : IDisposable {
         public int Size { get; set; }
         public readonly int uboID { get; }
         public UniformBuffer(int size, int binding) {
@@ -24,6 +24,9 @@ namespace Game.Graphics {
 
         public void Unbind() {
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+        }
+        public void Dispose() {
+            GL.DeleteBuffer(this.uboID);
         }
     }
 }

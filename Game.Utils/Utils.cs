@@ -52,19 +52,6 @@ namespace Game.Utils {
         public static GCHandle GetObjHandle(object allocatedObject) {
             return GCHandle.Alloc(allocatedObject, GCHandleType.Pinned);
         }
-        public static IntPtr GetObjectPtr(object allocatedObject) {
-            // Pin object, get addres and release pin
-            GCHandle pinned = GCHandle.Alloc(allocatedObject, GCHandleType.Pinned);
-            IntPtr address = pinned.AddrOfPinnedObject();
-            pinned.Free();
-            
-            return address;
-        }
-        public static ReadOnlySpan<T> GetObjectSpan<T>(object obj) {
-            unsafe {
-                return new ReadOnlySpan<T>((void*)IOUtils.GetObjectPtr(obj), 1);
-            }
-        }
     }
     public static class StringUtils {
         
@@ -82,6 +69,16 @@ namespace Game.Utils {
                 output += $"{value} ";
             }
             return output;
+        }
+    }
+    public static class ArrayUtils {
+        public static int IndexOf<T>(object[] arr, object obj) {
+            for (int i = 0; i < arr.Length; i++) {
+                if (((T)arr[i]).Equals((T)obj)) {
+                    return i;
+                }
+            }
+            return -1;
         }
     }
     public static class MathUtils {

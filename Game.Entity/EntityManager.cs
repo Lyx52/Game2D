@@ -1,8 +1,11 @@
 using System.Collections.Generic;
+using OpenTK.Mathematics;
 using Game.Graphics;
+using Game.Utils;
+using System;
 
 namespace Game.Entity {
-    public class EntityManager {
+    public class EntityManager : IDisposable {
         private List<Entity> entities;
         private List<int> drawableEntities;
         private int playerIndex = -1;
@@ -23,19 +26,26 @@ namespace Game.Entity {
             if (this.playerIndex >= 0) {
                 return (Player)this.entities[this.playerIndex];
             } else {
-                return null;
+                GameHandler.Logger.Critical("Player not initalized!");
+                return default;
             }
         }
-        public void OnRender(Renderer renderer) {
+        public void Render(Renderer renderer) {
             foreach (int entityIndex in this.drawableEntities) {
-                ((DrawableEntity)this.entities[entityIndex]).Draw(renderer);
+                // Currently player entity visibility range is hardcoded
+                if (this.GetPlayer().InRange(this.entities[entityIndex], 5))
+                    ((DrawableEntity)this.entities[entityIndex]).Draw(renderer);
             }
         }
-        public void OnUpdate(double dt) {
+        public void Update(double dt) {
             // Todo: Add chunk based updates
             foreach (Entity entity in this.entities) {
                 entity.Update(dt);
             }
+        }
+        public void Dispose() {
+            foreach(Entity e in this.entities)
+                e.Dispose();
         }
     }
 }

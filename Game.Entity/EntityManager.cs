@@ -1,8 +1,10 @@
-using System.Collections.Generic;
 using OpenTK.Mathematics;
+using System.Collections.Generic;
+using System;
+
 using Game.Graphics;
 using Game.Utils;
-using System;
+using Game.Input;
 
 namespace Game.Entity {
     public class EntityManager : IDisposable {
@@ -46,6 +48,15 @@ namespace Game.Entity {
         public void Dispose() {
             foreach(Entity e in this.entities)
                 e.Dispose();
+        }
+        public Player SpawnPlayer(int x, int y, KeyboardHandler keyboard, MouseHandler mouse) {
+            Player player = new Player(x, y);
+
+            player.Controller.AttachKeyboardHandler(keyboard);
+            player.Controller.AttachMouseHandler(mouse);
+            this.AddEntity(player);
+
+            return player;
         }
     }
 }

@@ -28,6 +28,8 @@ namespace Game.Graphics {
         public Vector4 Color;
         public float Rotation;
         public int Layer;
+        public DrawQuad2D(in Vector2 position, in Vector2 size, in SpriteSheet spriteSheet, in Vector2i spritePos, in float rotation=0, in RenderLayer layer=RenderLayer.BACKGROUND) : this(position, size, spriteSheet.SpriteTexture, spriteSheet.GetSubSprite(spritePos), Vector4.One, rotation:rotation, layer:layer){}
+        public DrawQuad2D(in Vector2 position, in Vector2 size, in Texture texture, in Vector2[] textureUV, in float rotation=0, in RenderLayer layer=RenderLayer.BACKGROUND) : this(position, size, texture, textureUV, Vector4.One, rotation:rotation, layer:layer){}
         public DrawQuad2D(in Vector2 position, in Vector2 size, in Texture texture, in Vector2[] textureUV, in Vector4 color, in float rotation=0, in RenderLayer layer=RenderLayer.BACKGROUND) {
             this.Position = position;
             this.Size = size;
@@ -228,7 +230,6 @@ namespace Game.Graphics {
         }
         public void DrawQuad(DrawQuad2D quad) {
             if (this.Storage.IsOverflow()) {
-                GameHandler.Logger.Debug($"Overflow: {this.Storage.TextureUnitIndex}");
                 this.NextBatch();
             }
             float textureIndex = this.AddUniqueTexture(quad.Texture);

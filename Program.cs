@@ -25,6 +25,7 @@ namespace Game
 
             using (Application game = new Application("SimpleGame2D", WindowSize.X, WindowSize.Y)) {
                 MainRenderer = game.Renderer;
+                game.LoadWorld();
                 game.Run(); 
             }
             MainLogger.Close();

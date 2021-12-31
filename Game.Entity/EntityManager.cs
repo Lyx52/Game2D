@@ -33,7 +33,7 @@ namespace Game.Entity {
         public void Render(Renderer renderer) {
             foreach (int entityIndex in this.drawableEntities) {
                 // Currently player entity visibility range is hardcoded
-                if (this.GetPlayer().InRange(this.entities[entityIndex], 5))
+                if (this.GetPlayer().InRange(this.entities[entityIndex], 150))
                     ((DrawableEntity)this.entities[entityIndex]).Draw(renderer);
             }
         }

@@ -154,6 +154,7 @@ namespace Game.Graphics {
         public OrthoCamera RenderCamera;
         public int PrevVertexCount = 0;
         private int CurrentVertexCount = 0;
+        public Renderer(int bufferSize, Vector2i drawSize) : this(bufferSize, drawSize.X, drawSize.Y) {}
         public Renderer(int bufferSize, int width, int height) {
             DefaultUVCoords = new Vector2[4] {
                 new Vector2(1.0f, 1.0f),
@@ -165,6 +166,7 @@ namespace Game.Graphics {
             this.RendererState = new GLState();
             this.RendererState.SetClearColor(0.0f, 0.0f, 1.0f, 1.0f);
             this.RendererState.EnableAlpha();
+            this.RendererState.EnableScissorTest();
 
             this.TextureShader = new ShaderProgram("./res/shaders/shader.vert", "./res/shaders/shader.frag");
             this.TextureShader.Bind();
@@ -201,8 +203,8 @@ namespace Game.Graphics {
             unsafe {
                 this.CameraBuffer = new UniformBuffer(sizeof(Matrix4), 1);
             }
-            // Init renderer camera
-            this.RenderCamera = new OrthoCamera(-1, 1, -1, 1);
+            // Init renderer camera camera draw size is window width divided by aspect ratio
+            this.RenderCamera = new OrthoCamera(this.DrawSize);
 
             // Collect garbage, for some reason garbage collector collects our buffers
             GC.Collect();
@@ -241,6 +243,7 @@ namespace Game.Graphics {
             this.Storage.Indices += 6;
         }
         public void StartScene(in Vector2 cameraPosition) {
+            GL.Scissor(0, 0, GameHandler.WindowSize.X, GameHandler.WindowSize.Y);
             unsafe {
                 this.RenderCamera.Recalculate(cameraPosition);
                 this.CameraBuffer.SetData(this.RenderCamera.GetViewProjection(), sizeof(Matrix4));
@@ -283,6 +286,8 @@ namespace Game.Graphics {
             }
         }
         public void OnResize(ResizeEventArgs args) {
+            GameHandler.WindowSize = args.Size;
+            this.DrawSize = Vector2i.Divide(args.Size, GameHandler.AspectRatio);
             GL.Viewport(0, 0, args.Size.X, args.Size.Y);   
         }
         public void DrawIndexed(PrimitiveType type) {

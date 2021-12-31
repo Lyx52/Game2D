@@ -61,7 +61,7 @@ namespace Game.Entity {
             get { return this.mouseHandler.GetPosition(); }
         }
         public Vector2 GlobalMousePosition {
-            get { return (this.MousePosition - GameHandler.Renderer.DrawSize / 2); }
+            get { return (this.MousePosition - GameHandler.WindowSize / 2); }
         }
         public override string ToString() {
             return "ControllerComponent";

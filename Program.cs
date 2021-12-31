@@ -1,6 +1,7 @@
 ﻿using Game.Utils;
 using Game.Graphics;
 using Game.Core;
+using OpenTK.Mathematics;
 
 namespace Game
 {
@@ -13,14 +14,16 @@ namespace Game
         public static int MAX_BUFFER_MEMORY = 32768;
         
         // These values need to be loaded from settings
-        private static int WIDTH = 800;
-        private static int HEIGHT = 600;
+        public static Vector2i AspectRatio = new Vector2i(4, 3);
+        public static Vector2i WindowSize = new Vector2i(800, 600);
+        // public static Vector2i AspectRatio = new Vector2i(16, 9);
+        // public static Vector2i WindowSize = new Vector2i(1920, 1080);
         static void Main(string[] args)
         {
             MainLogger = new Logger();
             MainProfiler = new Profiler();
 
-            using (Application game = new Application("SimpleGame2D", WIDTH, HEIGHT)) {
+            using (Application game = new Application("SimpleGame2D", WindowSize.X, WindowSize.Y)) {
                 MainRenderer = game.Renderer;
                 game.Run(); 
             }

@@ -33,7 +33,7 @@ namespace Game.Core {
             this.MouseMove += this.Mouse.OnMouseMove;
 
             // Create renderer
-            this.Renderer = new Renderer(GameHandler.MAX_BUFFER_MEMORY, Size.X, Size.Y);
+            this.Renderer = new Renderer(GameHandler.MAX_BUFFER_MEMORY, Vector2i.Divide(GameHandler.WindowSize, GameHandler.AspectRatio));
             this.Resize += this.Renderer.OnResize;
             Renderer.LoadTexture("grass", "./res/textures/grass.png");
             Renderer.LoadTexture("apple", "./res/textures/apple.png");
@@ -68,7 +68,7 @@ namespace Game.Core {
             Renderer.StartScene(this.EntityHandler.GetPlayer().KinematicBody.Position);
             for (int i = 0; i < 2; i++)
                 for (int r = 0; r < 2; r++)
-                    Renderer.DispatchQuad(new DrawQuad2D(new Vector2(i * 1.05f, r * 1.05f), Vector2.One, this.spriteSheet.SpriteTexture, this.spriteSheet.GetSubSprite(i, r), new Vector4(1.0f, 1.0f, 1.0f, 1.0f), layer:RenderLayer.BACKGROUND));
+                    Renderer.DispatchQuad(new DrawQuad2D(new Vector2(i * 16.05f, r * 16.05f), new Vector2(16, 16), this.spriteSheet.SpriteTexture, this.spriteSheet.GetSubSprite(i, r), new Vector4(1.0f, 1.0f, 1.0f, 1.0f), layer:RenderLayer.BACKGROUND));
             this.EntityHandler.Render(this.Renderer);
             Renderer.EndScene();
             base.OnRenderFrame(args);

@@ -26,6 +26,7 @@ namespace Game.Graphics {
         public IntPtr ViewProjectionPtr { get; protected set; }
         public double Rotation { get; set; }
         public CameraQuad CameraQuad;
+        public OrthoCamera(Vector2 size) : this(-size.X / 2, size.X / 2, -size.Y / 2, size.Y /2) {}
         public OrthoCamera(float left, float right, float bottom, float top) {
             this.projection = Matrix4.CreateOrthographicOffCenter(left, right, bottom, top, 1.0f, -1.0f);
             this.CameraQuad = new CameraQuad(left, right, bottom, top);
@@ -37,6 +38,7 @@ namespace Game.Graphics {
             this.ViewProjectionPtr = Marshal.AllocHGlobal(Marshal.SizeOf(this.ViewProjection));
             this.Recalculate(Vector2.Zero);
         }
+        public void SetProjection(Vector2 size) { this.SetProjection(-size.X / 2, size.X / 2, -size.Y / 2, size.Y /2); }
         public void SetProjection(float left, float right, float bottom, float top) {
             this.projection = Matrix4.CreateOrthographicOffCenter(left, right, bottom, top, 1.0f, -1.0f);
             this.CameraQuad.SetQuad(left, right, bottom, top);

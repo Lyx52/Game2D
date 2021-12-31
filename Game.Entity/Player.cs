@@ -7,7 +7,6 @@ namespace Game.Entity {
         public Player(float x, float y) : base() {
             this.AttachComponent(new KinematicBody(x, y));
             this.AttachComponent(new EntityController(this));
-            this.KinematicBody.Size = new Vector2(0.5f, 0.5f);
             this.Layer = RenderLayer.LAYER_2;
         }
         public override void Draw(Renderer renderer) {
@@ -22,7 +21,7 @@ namespace Game.Entity {
 
         public override void Update(double dt) {
             // Rotate sprite towards mouse
-            this.KinematicBody.Rotation = MathUtils.LookAt(this.KinematicBody.Position, this.Controller.GlobalMousePosition);
+            this.KinematicBody.Rotation = MathUtils.LookAt(this.KinematicBody.Position, this.KinematicBody.Position + this.Controller.GlobalMousePosition);
             
             // Acceleration vector is equal to UP/DOWN key multiplied by acceleration
             Vector2 acceleration = new Vector2(0, this.Controller.GetDirectional().Y * (float)(dt *this.KinematicBody.Acceleration));

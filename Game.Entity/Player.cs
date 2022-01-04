@@ -7,6 +7,7 @@ namespace Game.Entity {
         public Player(float x, float y) : base() {
             this.AttachComponent(new KinematicBody(x, y));
             this.AttachComponent(new EntityController(this));
+            this.Sprite.SpriteTexture = GameHandler.Renderer.GetTexture("apple");
             this.Layer = RenderLayer.LAYER_2;
         }
         public override void Draw(Renderer renderer) {

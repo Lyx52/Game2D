@@ -7,8 +7,10 @@ using System;
 namespace Game.Graphics {
     public class ShaderProgram : IDisposable {
         public readonly int programID;
+
         private Dictionary<string, int> attribLocations;
         private Dictionary<string, int> uniformLocations;
+   
         public ShaderProgram(string vertFile, string fragFile) {
             this.programID = GL.CreateProgram();
 
@@ -62,7 +64,6 @@ namespace Game.Graphics {
         public void Bind() {
             GL.UseProgram(this.programID);
         }
-        
         public void Unbind() {
             GL.UseProgram(0);
         }

@@ -28,6 +28,8 @@ namespace Game.Graphics {
         public Vector4 Color;
         public float Rotation;
         public int Layer;
+        public DrawQuad2D(in Vector2 position, in Vector2 size, in SpriteSheet spriteSheet, in Vector2i spritePos, in float rotation=0, in RenderLayer layer=RenderLayer.BACKGROUND) : this(position, size, spriteSheet.SpriteTexture, spriteSheet.GetSubSprite(spritePos), Vector4.One, rotation:rotation, layer:layer){}
+        public DrawQuad2D(in Vector2 position, in Vector2 size, in Texture texture, in Vector2[] textureUV, in float rotation=0, in RenderLayer layer=RenderLayer.BACKGROUND) : this(position, size, texture, textureUV, Vector4.One, rotation:rotation, layer:layer){}
         public DrawQuad2D(in Vector2 position, in Vector2 size, in Texture texture, in Vector2[] textureUV, in Vector4 color, in float rotation=0, in RenderLayer layer=RenderLayer.BACKGROUND) {
             this.Position = position;
             this.Size = size;
@@ -41,25 +43,26 @@ namespace Game.Graphics {
             return this.Layer.CompareTo(other_quad.Layer);
         }
     }
-    public struct QuadVertex {
-        public Vector2 Position;
-        public Vector4 Color;
-        public Vector2 TexCoord;
-        public float TexIndex;
-        public QuadVertex(in Vector2 position, in Vector4 color, in Vector2 texCoord, in float texIndex) {
+    [StructLayout(LayoutKind.Explicit)]
+    public struct Vertex {
+        [FieldOffset(0)] public Vector2 Position;
+        [FieldOffset(8)] public Vector4 Color;
+        [FieldOffset(24)] public Vector2 TexCoord;
+        [FieldOffset(32)] public float TexIndex;
+        public Vertex(in Vector2 position, in Vector4 color, in Vector2 texCoord, in float texIndex) {
             this.Color = color;
             this.TexIndex = texIndex;
             this.TexCoord = texCoord;
             this.Position = position;
         }
     }
-    public struct RenderStorage : IDisposable {
+    public unsafe struct RenderStorage : IDisposable {
         public Texture[] TextureUnits { get; set; }
         public int TextureUnitIndex { get; set; }
-        public QuadVertex[] VertexArray { get; set; }
+        public Vertex[] VertexArray { get; set; }
         public GCHandle VertexArrayHandle { get; private set; }
         public int VertexCount { get; set; }
-        public int Indices { get; set; }
+        public int IndicesCount { get; set; }
         public readonly int MAX_TEXTURE_UNITS { get; }
         public readonly int MAX_VERTICES { get; }
         public readonly int MAX_QUADS { get; }
@@ -74,13 +77,11 @@ namespace Game.Graphics {
         public RenderStorage(int bufferSize) {
             this.TextureUnitIndex = 0;
             this.VertexCount = 0;
-            this.Indices = 0;
+            this.IndicesCount = 0;
             this.Flushes = 0;
             this.PrevFlushes = 0;
             this.MAX_TEXTURE_UNITS = 32;
-            unsafe {
-                this.MAX_QUADS = (int)((bufferSize / sizeof(QuadVertex)) / 4);
-            }
+            this.MAX_QUADS = (int)((bufferSize / sizeof(Vertex)) / 4);
             this.MAX_VERTICES = this.MAX_QUADS * 4;
             this.MAX_INDICES = this.MAX_QUADS * 6;
 
@@ -101,7 +102,7 @@ namespace Game.Graphics {
             this.DefaultTextureUV = Renderer.DefaultUVCoords;
 
             // Create quad vertex array pin it to get its pointer
-            this.VertexArray = new QuadVertex[MAX_VERTICES];
+            this.VertexArray = new Vertex[MAX_VERTICES];
             this.VertexArrayHandle = GCHandle.Alloc(this.VertexArray, GCHandleType.Pinned);
 
             this.DispatchedQuads = new List<DrawQuad2D>();
@@ -119,7 +120,7 @@ namespace Game.Graphics {
         }
         public void Reset() {
             this.VertexCount = 0;
-            this.Indices = 0;
+            this.IndicesCount = 0;
             this.TextureUnitIndex = 0;
         }
         public Vector4[] GetVertexQuad(QuadMode mode) {
@@ -130,7 +131,7 @@ namespace Game.Graphics {
             }
         }
         public bool IsOverflow() {
-            return (this.VertexCount + 4) > this.MAX_VERTICES || this.TextureUnitIndex >= this.MAX_TEXTURE_UNITS;
+            return (this.VertexCount + 4) >= this.MAX_VERTICES || (this.IndicesCount + 6) >= this.MAX_INDICES || (this.TextureUnitIndex + 1) >= this.MAX_TEXTURE_UNITS;
         }
         public void Dispose() {
             GameHandler.Logger.Warn("Disposing render storage! Is this intentional?");
@@ -144,13 +145,13 @@ namespace Game.Graphics {
         private GLState RendererState;
         private RenderStorage Storage;
         private ShaderProgram TextureShader;
-        private UniformBuffer CameraBuffer;
-        private VertexArray VertexArray;
-        private VertexBuffer VertexBuffer;
-        private IndexBuffer IndexBuffer;
-        private BufferLayout VertexLayout;
+        private VertexArray<uint, float> VertexArray;
+        private BufferObject<float> VertexBuffer;
+        private BufferObject<uint> IndexBuffer;
+        private BufferObject<float> CameraBuffer;
         public Vector2 DrawSize { get; set; }
         public static Vector2[] DefaultUVCoords;
+        
         public OrthoCamera RenderCamera;
         public int PrevVertexCount = 0;
         private int CurrentVertexCount = 0;
@@ -168,22 +169,22 @@ namespace Game.Graphics {
             this.RendererState.EnableAlpha();
             this.RendererState.EnableScissorTest();
 
-            this.TextureShader = new ShaderProgram("./res/shaders/shader.vert", "./res/shaders/shader.frag");
+            this.TextureShader = new ShaderProgram("./res/shaders/TextureShader.vert", "./res/shaders/TextureShader.frag");
             this.TextureShader.Bind();
 
             // Setup vertex buffer/array
-            this.VertexArray = new VertexArray();
-            this.VertexLayout = new BufferLayout(new List<BufferElement>() {
-                new BufferElement("position", ElementType.Float2, 0),
-                new BufferElement("color", ElementType.Float4, 1),
-                new BufferElement("uvCoord", ElementType.Float2, 2),
-                new BufferElement("texIndex", ElementType.Float, 3) 
+            this.VertexArray = new VertexArray<uint, float>();
+
+            VertexLayout VertexLayout = new VertexLayout(new List<VertexElement>() {
+                new VertexElement("position", ElementType.Vector2f, 0),
+                new VertexElement("color", ElementType.Vector4f, 1),
+                new VertexElement("uvCoord", ElementType.Vector2f, 2),
+                new VertexElement("texIndex", ElementType.Float, 3)
             });
 
             this.Storage = new RenderStorage(bufferSize);
-            this.VertexBuffer = new VertexBuffer(this.VertexLayout.Size * this.Storage.MAX_VERTICES);
-            this.VertexBuffer.Layout = this.VertexLayout;
-            this.VertexArray.AddVertexBuffer(this.VertexBuffer);
+            this.VertexBuffer = new BufferObject<float>(VertexLayout.Size * this.Storage.MAX_VERTICES, BufferTarget.ArrayBuffer);
+            this.VertexArray.AddVertexBuffer(this.VertexBuffer, VertexLayout);
 
             // Setup buffer of indices
             uint[] quadIndices = new uint[this.Storage.MAX_INDICES];
@@ -198,10 +199,13 @@ namespace Game.Graphics {
                 quadIndices[i + 5] = (uint)offset + 3;
                 offset += 4;
             }
-            this.IndexBuffer = new IndexBuffer(sizeof(uint) * this.Storage.MAX_INDICES, data:quadIndices);
+            
+            this.IndexBuffer = new BufferObject<uint>(sizeof(uint) * this.Storage.MAX_INDICES, BufferTarget.ElementArrayBuffer, data: quadIndices);
+            this.VertexArray.Bind();
             this.VertexArray.SetIndexBuffer(this.IndexBuffer);
+
             unsafe {
-                this.CameraBuffer = new UniformBuffer(sizeof(Matrix4), 1);
+                this.CameraBuffer = new BufferObject<float>(sizeof(Matrix4), BufferTarget.UniformBuffer, uniform_binding: 1);
             }
             // Init renderer camera camera draw size is window width divided by aspect ratio
             this.RenderCamera = new OrthoCamera(this.DrawSize);
@@ -228,19 +232,18 @@ namespace Game.Graphics {
         }
         public void DrawQuad(DrawQuad2D quad) {
             if (this.Storage.IsOverflow()) {
-                GameHandler.Logger.Debug($"Overflow: {this.Storage.TextureUnitIndex}");
                 this.NextBatch();
             }
-            float textureIndex = this.AddUniqueTexture(quad.Texture);
+            int textureIndex = this.AddUniqueTexture(quad.Texture);
             Matrix4 transform = this.CreateTransformMatrix(quad.Position, quad.Size, quad.Rotation);
             for (int i = 0; i < 4; i++) {
                 // This actually only check if its a center mode, if its any other mode it will always be corner
                 Vector4 vertexPosition = (this.Storage.GetVertexQuad(RendererState.QuadRenderMode))[i] * transform;
 
-                this.Storage.VertexArray[this.Storage.VertexCount++] = new QuadVertex(vertexPosition.Xy, quad.Color, quad.TexCoords[i], textureIndex);
+                this.Storage.VertexArray[this.Storage.VertexCount++] = new Vertex(vertexPosition.Xy, quad.Color, quad.TexCoords[i], textureIndex);
                 this.CurrentVertexCount++;
             }
-            this.Storage.Indices += 6;
+            this.Storage.IndicesCount += 6;
         }
         public void StartScene(in Vector2 cameraPosition) {
             GL.Scissor(0, 0, GameHandler.WindowSize.X, GameHandler.WindowSize.Y);
@@ -273,16 +276,16 @@ namespace Game.Graphics {
                 // Upload vertex data
                 this.VertexArray.Bind();
                 this.VertexBuffer.Bind();
+                this.TextureShader.Bind();
                 unsafe {
-                    this.VertexBuffer.SetDataQuadVertex(this.Storage.VertexArrayHandle.AddrOfPinnedObject(), sizeof(QuadVertex) * this.Storage.VertexCount);
+                    this.VertexBuffer.SetData(this.Storage.VertexArrayHandle.AddrOfPinnedObject(), sizeof(Vertex) * this.Storage.VertexCount);
                 }
                 
                 // Bind textures
                 this.BindTextureUnits();
                 this.DrawIndexed(PrimitiveType.Triangles);
 
-                this.VertexArray.Unbind();
-                this.VertexBuffer.Unbind();
+                this.TextureShader.Unbind();
             }
         }
         public void OnResize(ResizeEventArgs args) {
@@ -291,7 +294,7 @@ namespace Game.Graphics {
             GL.Viewport(0, 0, args.Size.X, args.Size.Y);   
         }
         public void DrawIndexed(PrimitiveType type) {
-            GL.DrawElements(type, this.Storage.Indices, DrawElementsType.UnsignedInt, 0);
+            GL.DrawElements(type, this.Storage.IndicesCount, DrawElementsType.UnsignedInt, 0);
         }
         public void DrawPrimative(PrimitiveType type) {
             GL.DrawArrays(type, 0, this.Storage.VertexCount);

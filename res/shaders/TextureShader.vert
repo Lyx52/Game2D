@@ -15,8 +15,9 @@ out float pass_texIndex;
 void main(void)
 {
     gl_Position = block_matrices.viewProjection * vec4(position.xy, 0.0f, 1.0);
-    pass_Color = color;
     
+    pass_Color = color;
+
     pass_uvCoord = uvCoord;
     pass_texIndex = texIndex;
 }

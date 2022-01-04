@@ -10,7 +10,7 @@ namespace Game.World {
         public EntityManager EntityHandler { get; }
         private Random Rnd;
         private SpriteSheet WorldSpriteSheet;
-        private Vector2 TileSize = new Vector2(1, 1);
+        private Vector2 TileSize = new Vector2(8, 8);
         private float[,] NoiseMap = new float[128, 128];
         private Vector2i[] TileMapping = {
             new Vector2i(0, 0),
@@ -22,7 +22,7 @@ namespace Game.World {
             this.EntityHandler = new EntityManager();
             this.Rnd = new Random(seed);
             Noise.Seed = seed;
-            NoiseMap = Noise.Calc2D(NoiseMap.GetLength(0), NoiseMap.GetLength(1), 0.025F);
+            NoiseMap = Noise.Calc2D(NoiseMap.GetLength(0), NoiseMap.GetLength(1), 0.015F);
             TileMap = new int[NoiseMap.GetLength(0), NoiseMap.GetLength(1)];
 
             for (int row = 0; row < NoiseMap.GetLength(0); row++) {

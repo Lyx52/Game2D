@@ -43,16 +43,22 @@ namespace Game.Graphics {
             return this.Layer.CompareTo(other_quad.Layer);
         }
     }
+    [StructLayout(LayoutKind.Explicit)]
     public struct QuadVertex {
-        public Vector2 Position;
-        public Vector4 Color;
-        public Vector2 TexCoord;
-        public float TexIndex;
-        public QuadVertex(in Vector2 position, in Vector4 color, in Vector2 texCoord, in float texIndex) {
+        [FieldOffset(0)] public Vector2 Position;
+        [FieldOffset(8)] public Vector4 Color;
+        [FieldOffset(24)] public Vector2 TexCoord;
+        [FieldOffset(32)] public float TexIndex;
+        [FieldOffset(36)] public float Radiuss;
+
+        // If radiuss is 0 then shape will be default quad
+        public QuadVertex(in Vector2 position, in Vector4 color, in Vector2 texCoord, in float texIndex) : this(position, color, texCoord, texIndex, 0) {}
+        public QuadVertex(in Vector2 position, in Vector4 color, in Vector2 texCoord, in float texIndex, in float rad) {
             this.Color = color;
             this.TexIndex = texIndex;
             this.TexCoord = texCoord;
             this.Position = position;
+            this.Radiuss = rad;
         }
     }
     public struct RenderStorage : IDisposable {
@@ -150,9 +156,9 @@ namespace Game.Graphics {
         private VertexArray VertexArray;
         private VertexBuffer VertexBuffer;
         private IndexBuffer IndexBuffer;
-        private BufferLayout VertexLayout;
         public Vector2 DrawSize { get; set; }
         public static Vector2[] DefaultUVCoords;
+        
         public OrthoCamera RenderCamera;
         public int PrevVertexCount = 0;
         private int CurrentVertexCount = 0;
@@ -170,21 +176,22 @@ namespace Game.Graphics {
             this.RendererState.EnableAlpha();
             this.RendererState.EnableScissorTest();
 
-            this.TextureShader = new ShaderProgram("./res/shaders/shader.vert", "./res/shaders/shader.frag");
+            this.TextureShader = new ShaderProgram("./res/shaders/TextureShader.vert", "./res/shaders/TextureShader.frag");
             this.TextureShader.Bind();
 
             // Setup vertex buffer/array
             this.VertexArray = new VertexArray();
-            this.VertexLayout = new BufferLayout(new List<BufferElement>() {
+            BufferLayout VertexLayout = new BufferLayout(new List<BufferElement>() {
                 new BufferElement("position", ElementType.Float2, 0),
                 new BufferElement("color", ElementType.Float4, 1),
                 new BufferElement("uvCoord", ElementType.Float2, 2),
-                new BufferElement("texIndex", ElementType.Float, 3) 
+                new BufferElement("texIndex", ElementType.Float, 3),
+                new BufferElement("rad", ElementType.Float, 4)
             });
 
             this.Storage = new RenderStorage(bufferSize);
-            this.VertexBuffer = new VertexBuffer(this.VertexLayout.Size * this.Storage.MAX_VERTICES);
-            this.VertexBuffer.Layout = this.VertexLayout;
+            this.VertexBuffer = new VertexBuffer(VertexLayout.Size * this.Storage.MAX_VERTICES);
+            this.VertexBuffer.Layout = VertexLayout;
             this.VertexArray.AddVertexBuffer(this.VertexBuffer);
 
             // Setup buffer of indices
@@ -201,7 +208,9 @@ namespace Game.Graphics {
                 offset += 4;
             }
             this.IndexBuffer = new IndexBuffer(sizeof(uint) * this.Storage.MAX_INDICES, data:quadIndices);
+            this.VertexArray.Bind();
             this.VertexArray.SetIndexBuffer(this.IndexBuffer);
+
             unsafe {
                 this.CameraBuffer = new UniformBuffer(sizeof(Matrix4), 1);
             }
@@ -232,7 +241,7 @@ namespace Game.Graphics {
             if (this.Storage.IsOverflow()) {
                 this.NextBatch();
             }
-            float textureIndex = this.AddUniqueTexture(quad.Texture);
+            int textureIndex = this.AddUniqueTexture(quad.Texture);
             Matrix4 transform = this.CreateTransformMatrix(quad.Position, quad.Size, quad.Rotation);
             for (int i = 0; i < 4; i++) {
                 // This actually only check if its a center mode, if its any other mode it will always be corner
@@ -274,6 +283,7 @@ namespace Game.Graphics {
                 // Upload vertex data
                 this.VertexArray.Bind();
                 this.VertexBuffer.Bind();
+                this.TextureShader.Bind();
                 unsafe {
                     this.VertexBuffer.SetDataQuadVertex(this.Storage.VertexArrayHandle.AddrOfPinnedObject(), sizeof(QuadVertex) * this.Storage.VertexCount);
                 }
@@ -284,6 +294,7 @@ namespace Game.Graphics {
 
                 this.VertexArray.Unbind();
                 this.VertexBuffer.Unbind();
+                this.TextureShader.Unbind();
             }
         }
         public void OnResize(ResizeEventArgs args) {

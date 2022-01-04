@@ -152,10 +152,10 @@ namespace Game.Graphics {
         private GLState RendererState;
         private RenderStorage Storage;
         private ShaderProgram TextureShader;
-        private UniformBuffer CameraBuffer;
-        private VertexArray VertexArray;
-        private VertexBuffer VertexBuffer;
+        private VertexArray<uint, float> VertexArray;
+        private BufferObject<float> VertexBuffer;
         private BufferObject<uint> IndexBuffer;
+        private BufferObject<float> CameraBuffer;
         public Vector2 DrawSize { get; set; }
         public static Vector2[] DefaultUVCoords;
         
@@ -180,7 +180,8 @@ namespace Game.Graphics {
             this.TextureShader.Bind();
 
             // Setup vertex buffer/array
-            this.VertexArray = new VertexArray();
+            this.VertexArray = new VertexArray<uint, float>();
+
             BufferLayout VertexLayout = new BufferLayout(new List<BufferElement>() {
                 new BufferElement("position", ElementType.Float2, 0),
                 new BufferElement("color", ElementType.Float4, 1),
@@ -190,9 +191,8 @@ namespace Game.Graphics {
             });
 
             this.Storage = new RenderStorage(bufferSize);
-            this.VertexBuffer = new VertexBuffer(VertexLayout.Size * this.Storage.MAX_VERTICES);
-            this.VertexBuffer.Layout = VertexLayout;
-            this.VertexArray.AddVertexBuffer(this.VertexBuffer);
+            this.VertexBuffer = new BufferObject<float>(VertexLayout.Size * this.Storage.MAX_VERTICES, BufferTarget.ArrayBuffer);
+            this.VertexArray.AddVertexBuffer(this.VertexBuffer, VertexLayout);
 
             // Setup buffer of indices
             uint[] quadIndices = new uint[this.Storage.MAX_INDICES];
@@ -207,12 +207,12 @@ namespace Game.Graphics {
                 quadIndices[i + 5] = (uint)offset + 3;
                 offset += 4;
             }
-            this.IndexBuffer = new BufferObject<uint>(sizeof(uint) * this.Storage.MAX_INDICES, BufferTarget.ElementArrayBuffer, data:quadIndices);
+            this.IndexBuffer = new BufferObject<uint>(sizeof(uint) * this.Storage.MAX_INDICES, BufferTarget.ElementArrayBuffer, data: quadIndices);
             this.VertexArray.Bind();
             this.VertexArray.SetIndexBuffer(this.IndexBuffer);
 
             unsafe {
-                this.CameraBuffer = new UniformBuffer(sizeof(Matrix4), 1);
+                this.CameraBuffer = new BufferObject<float>(sizeof(Matrix4), BufferTarget.UniformBuffer, uniform_binding: 1);
             }
             // Init renderer camera camera draw size is window width divided by aspect ratio
             this.RenderCamera = new OrthoCamera(this.DrawSize);
@@ -285,15 +285,13 @@ namespace Game.Graphics {
                 this.VertexBuffer.Bind();
                 this.TextureShader.Bind();
                 unsafe {
-                    this.VertexBuffer.SetDataQuadVertex(this.Storage.VertexArrayHandle.AddrOfPinnedObject(), sizeof(QuadVertex) * this.Storage.VertexCount);
+                    this.VertexBuffer.SetData(this.Storage.VertexArrayHandle.AddrOfPinnedObject(), sizeof(QuadVertex) * this.Storage.VertexCount);
                 }
                 
                 // Bind textures
                 this.BindTextureUnits();
                 this.DrawIndexed(PrimitiveType.Triangles);
 
-                this.VertexArray.Unbind();
-                this.VertexBuffer.Unbind();
                 this.TextureShader.Unbind();
             }
         }

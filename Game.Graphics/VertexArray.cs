@@ -3,38 +3,36 @@ using System.Collections.Generic;
 using System;
 
 namespace Game.Graphics {
-    public class VertexArray : IDisposable {
+    public class VertexArray<T1, T2> : IDisposable 
+        where T1 : unmanaged 
+        where T2 : unmanaged 
+    {
         public readonly int vaoID;
-        private List<VertexBuffer> vertexBuffers;
-        private BufferObject<uint> indexBuffer;
+        private BufferObject<T1> IndexBuffer;
+        private BufferObject<T1> VertexBuffer;
 
         public VertexArray() {
             this.vaoID = GL.GenVertexArray();
-            this.vertexBuffers = new List<VertexBuffer>();
         }
         public void Bind() {
             GL.BindVertexArray(this.vaoID);
         }
-        public void Unbind() {
-            GL.BindVertexArray(0);
+        public void SetIndexBuffer(BufferObject<T1> buffer) {
+            this.IndexBuffer = buffer;
+            this.IndexBuffer.Bind();
         }
-        public void SetIndexBuffer(BufferObject<uint> buffer) {
-            this.indexBuffer = buffer;
-            this.indexBuffer.Bind();
-        }
-        public void AddVertexBuffer(VertexBuffer buffer) {
-            if (!buffer.Layout.IsValid()) {
+        public void AddVertexBuffer(BufferObject<T2> buffer, BufferLayout layout) {
+            if (!layout.IsValid()) {
                 GameHandler.Logger.Error("When adding a VertexBuffer it must have a valid layout!");
             }
 
             this.Bind();
             buffer.Bind();
-            foreach (BufferElement element in buffer.Layout.Elements) {
+            foreach (BufferElement element in layout.Elements) {
                 GL.EnableVertexAttribArray(element.Index);
-                GL.VertexAttribPointer(element.Index, element.ComponentCount, element.AttribType, element.Normalized, buffer.Stride, element.Offset);
+                GL.VertexAttribPointer(element.Index, element.ComponentCount, element.AttribType, element.Normalized, layout.Stride, element.Offset);
                 GLHelper.CheckGLError("SetAttribPointer");
             }
-            this.vertexBuffers.Add(buffer);
         }
         public void Dispose() {
             GL.DeleteVertexArray(this.vaoID);

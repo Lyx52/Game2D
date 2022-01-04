@@ -155,7 +155,7 @@ namespace Game.Graphics {
         private UniformBuffer CameraBuffer;
         private VertexArray VertexArray;
         private VertexBuffer VertexBuffer;
-        private IndexBuffer IndexBuffer;
+        private BufferObject<uint> IndexBuffer;
         public Vector2 DrawSize { get; set; }
         public static Vector2[] DefaultUVCoords;
         
@@ -207,7 +207,7 @@ namespace Game.Graphics {
                 quadIndices[i + 5] = (uint)offset + 3;
                 offset += 4;
             }
-            this.IndexBuffer = new IndexBuffer(sizeof(uint) * this.Storage.MAX_INDICES, data:quadIndices);
+            this.IndexBuffer = new BufferObject<uint>(sizeof(uint) * this.Storage.MAX_INDICES, BufferTarget.ElementArrayBuffer, data:quadIndices);
             this.VertexArray.Bind();
             this.VertexArray.SetIndexBuffer(this.IndexBuffer);
 

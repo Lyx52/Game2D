@@ -6,7 +6,7 @@ namespace Game.Graphics {
     public class VertexArray : IDisposable {
         public readonly int vaoID;
         private List<VertexBuffer> vertexBuffers;
-        private IndexBuffer indexBuffer;
+        private BufferObject<uint> indexBuffer;
 
         public VertexArray() {
             this.vaoID = GL.GenVertexArray();
@@ -18,7 +18,7 @@ namespace Game.Graphics {
         public void Unbind() {
             GL.BindVertexArray(0);
         }
-        public void SetIndexBuffer(IndexBuffer buffer) {
+        public void SetIndexBuffer(BufferObject<uint> buffer) {
             this.indexBuffer = buffer;
             this.indexBuffer.Bind();
         }

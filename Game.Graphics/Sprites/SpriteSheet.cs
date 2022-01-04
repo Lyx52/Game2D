@@ -39,8 +39,6 @@ namespace Game.Graphics {
             }
 
             GC.Collect();
-            // TODO: Check if we still need to reverse the array
-            // Array.Reverse(this.tileUV);
         }
         public void AddNamedSubSprite(string spriteName, int x, int y) {
             if (this.SubSprites.ContainsKey(spriteName)) {

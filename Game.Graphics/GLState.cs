@@ -60,8 +60,8 @@ namespace Game.Graphics {
     }
     public class GLState {
 
-        private AlphaState alphaState = new AlphaState();
-        private ScissorState scissorState = new ScissorState();
+        public AlphaState AlphaBlend = new AlphaState();
+        public ScissorState ScissorTest = new ScissorState();
         private QuadMode quadMode = QuadMode.CENTER;
 
         public QuadMode QuadRenderMode {
@@ -71,18 +71,6 @@ namespace Game.Graphics {
             set {
                 this.quadMode = value;
             }
-        }
-        public void EnableAlpha() {
-            this.alphaState.Enable();
-        }
-        public void DisableAlpha() {
-            this.alphaState.Disable();
-        }
-        public void EnableScissorTest() {
-            this.scissorState.Enable();
-        }
-        public void DisableScissorTest() {
-            this.scissorState.Disable();
         }
         public void SetClearColor(float red, float green, float blue, float alpha) {
             GL.ClearColor(red, green, blue, alpha);

@@ -40,7 +40,7 @@ vec4 GetTexture(in int textureIndex) {
         case 29: return pass_Color * texture(textures[29], pass_uvCoord);
         case 30: return pass_Color * texture(textures[30], pass_uvCoord);
         case 31: return pass_Color * texture(textures[31], pass_uvCoord);
-        default: return vec4(1.0, 0, 0.5, 1.0); // Tex dosnt exist!
+        default: return pass_Color; // Tex dosnt exist!
     }
 }
 void main(void)

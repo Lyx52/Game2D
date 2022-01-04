@@ -1,5 +1,4 @@
 using OpenTK.Graphics.OpenGL4;
-using System.Collections.Generic;
 using System;
 
 namespace Game.Graphics {

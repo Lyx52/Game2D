@@ -11,7 +11,7 @@ namespace Game.Graphics {
             this.bufferID = GL.GenBuffer();
             this.Type = type;
             GL.BindBuffer(this.Type, this.bufferID);
-            
+
             if (this.Type == BufferTarget.UniformBuffer) {
                 GL.NamedBufferData(this.bufferID, size, IntPtr.Zero, BufferUsageHint.DynamicDraw);
                 GL.BindBufferBase(BufferRangeTarget.UniformBuffer, uniform_binding, this.bufferID);

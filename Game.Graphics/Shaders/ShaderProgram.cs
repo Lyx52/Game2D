@@ -60,14 +60,9 @@ namespace Game.Graphics {
                 return new_location;
             }
         }
-        
         public void Bind() {
             GL.UseProgram(this.programID);
         }
-        public void Unbind() {
-            GL.UseProgram(0);
-        }
-        
         public void Set4f(Vector4 value, string varName) {
             GL.Uniform4(this.GetUniformLocation(varName), value);
         }

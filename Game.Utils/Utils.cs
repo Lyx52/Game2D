@@ -101,5 +101,11 @@ namespace Game.Utils {
         public static int ToInt(bool value) {
             return value ? 1 : 0;
         }
+        public static Matrix4 CreateTransform(Vector2 position, Vector2 size, float rotation) {
+            Matrix4 _translation = Matrix4.CreateTranslation(position.X, position.Y, 0);
+            Matrix4 _rotation = Matrix4.CreateRotationZ((float)MathUtils.ToRadians((float)rotation));
+            Matrix4 _scale = Matrix4.CreateScale(size.X, size.Y, 1.0f);
+            return Matrix4.Mult(Matrix4.Mult(_scale, _rotation), _translation);
+        }
     }
 }

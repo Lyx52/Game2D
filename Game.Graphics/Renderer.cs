@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using Game.Utils;
 using System.Runtime.InteropServices;
-using System.Buffers;
+
 namespace Game.Graphics {
     public enum QuadMode {
         CENTER,
@@ -56,10 +56,27 @@ namespace Game.Graphics {
             this.Position = position;
         }
     }
+    public struct RenderStats {
+        public int TotalFlushCount { get; set; }
+        public int CurrentVertexCount { get; set; }
+        private int TotalVertexCount { get; set; }
+        public int CurrentQuadCount { get; set; }
+        private int TotalQuadCount { get; set; }
+        public void Reset() {
+            this.TotalQuadCount = this.CurrentQuadCount;
+            this.TotalVertexCount = this.CurrentVertexCount;
+            this.CurrentQuadCount = 0;
+            this.CurrentVertexCount = 0;
+        }
+        public override string ToString()
+        {
+            return $"Flushes: {this.TotalFlushCount}, Vertices: {this.TotalVertexCount}, Quads: {this.TotalQuadCount}";
+        }
+    }
     public unsafe struct RenderStorage : IDisposable {
         public Texture[] TextureUnits { get; set; }
         public int TextureUnitIndex { get; set; }
-        public Vertex[] VertexArray { get; set; }
+        private Vertex[] VertexArray { get; set; }
         public GCHandle VertexArrayHandle { get; private set; }
         public int VertexCount { get; set; }
         public int IndicesCount { get; set; }
@@ -67,19 +84,17 @@ namespace Game.Graphics {
         public readonly int MAX_VERTICES { get; }
         public readonly int MAX_QUADS { get; }
         public readonly int MAX_INDICES { get; }
-        public int Flushes { get; set; }
-        public int PrevFlushes { get; set; }
-        private readonly Vector4[] CenteredQuad { get; }
-        private readonly Vector4[] CornerQuad { get; }
+        public readonly Vector4[] CenteredQuad { get; }
+        public readonly Vector4[] CornerQuad { get; }
         public readonly Vector2[] DefaultTextureUV { get; }
         public List<DrawQuad2D> DispatchedQuads { get; set; }
         public SortedList<string, Texture> Textures;
+        public RenderStats Stats;
         public RenderStorage(int bufferSize) {
             this.TextureUnitIndex = 0;
             this.VertexCount = 0;
             this.IndicesCount = 0;
-            this.Flushes = 0;
-            this.PrevFlushes = 0;
+            this.Stats = new RenderStats();
             this.MAX_TEXTURE_UNITS = 32;
             this.MAX_QUADS = (int)((bufferSize / sizeof(Vertex)) / 4);
             this.MAX_VERTICES = this.MAX_QUADS * 4;
@@ -119,16 +134,10 @@ namespace Game.Graphics {
             GC.KeepAlive(this);
         }
         public void Reset() {
+            this.Stats.Reset();
             this.VertexCount = 0;
             this.IndicesCount = 0;
             this.TextureUnitIndex = 0;
-        }
-        public Vector4[] GetVertexQuad(QuadMode mode) {
-            switch(mode) {
-                case QuadMode.CENTER: return this.CenteredQuad;
-                case QuadMode.CORNER: return this.CornerQuad;
-                default: return this.CenteredQuad;
-            }
         }
         public bool IsOverflow() {
             return (this.VertexCount + 4) >= this.MAX_VERTICES || (this.IndicesCount + 6) >= this.MAX_INDICES || (this.TextureUnitIndex + 1) >= this.MAX_TEXTURE_UNITS;
@@ -139,6 +148,9 @@ namespace Game.Graphics {
             foreach (Texture tex in this.Textures.Values) {
                 tex.Dispose();
             }
+        }
+        public Span<Vertex> Vertices {
+            get { return this.VertexArray.AsSpan(); }
         }
     }
     public class Renderer {
@@ -153,8 +165,6 @@ namespace Game.Graphics {
         public static Vector2[] DefaultUVCoords;
         
         public OrthoCamera RenderCamera;
-        public int PrevVertexCount = 0;
-        private int CurrentVertexCount = 0;
         public Renderer(int bufferSize, Vector2i drawSize) : this(bufferSize, drawSize.X, drawSize.Y) {}
         public Renderer(int bufferSize, int width, int height) {
             DefaultUVCoords = new Vector2[4] {
@@ -166,8 +176,8 @@ namespace Game.Graphics {
             this.DrawSize = new Vector2(width, height);
             this.RendererState = new GLState();
             this.RendererState.SetClearColor(0.0f, 0.0f, 1.0f, 1.0f);
-            this.RendererState.EnableAlpha();
-            this.RendererState.EnableScissorTest();
+            this.RendererState.AlphaBlend.Enable();
+            this.RendererState.ScissorTest.Enable();
 
             this.TextureShader = new ShaderProgram("./res/shaders/TextureShader.vert", "./res/shaders/TextureShader.frag");
             this.TextureShader.Bind();
@@ -213,12 +223,6 @@ namespace Game.Graphics {
             // Collect garbage, for some reason garbage collector collects our buffers
             GC.Collect();
         }
-        public Matrix4 CreateTransformMatrix(Vector2 position, Vector2 size, float rotation) {
-            Matrix4 _translation = Matrix4.CreateTranslation(position.X, position.Y, 0);
-            Matrix4 _rotation = Matrix4.CreateRotationZ((float)MathUtils.ToRadians((float)rotation));
-            Matrix4 _scale = Matrix4.CreateScale(size.X, size.Y, 1.0f);
-            return Matrix4.Mult(Matrix4.Mult(_scale, _rotation), _translation);
-        }
         public void DispatchQuad(DrawQuad2D quad) {
             this.Storage.DispatchedQuads.Add(quad);
         }
@@ -235,31 +239,29 @@ namespace Game.Graphics {
                 this.NextBatch();
             }
             int textureIndex = this.AddUniqueTexture(quad.Texture);
-            Matrix4 transform = this.CreateTransformMatrix(quad.Position, quad.Size, quad.Rotation);
+            Matrix4 transform = MathUtils.CreateTransform(quad.Position, quad.Size, quad.Rotation);
             for (int i = 0; i < 4; i++) {
                 // This actually only check if its a center mode, if its any other mode it will always be corner
-                Vector4 vertexPosition = (this.Storage.GetVertexQuad(RendererState.QuadRenderMode))[i] * transform;
+                Vector4 vertexPosition = this.DefaultQuad[i] * transform;
 
-                this.Storage.VertexArray[this.Storage.VertexCount++] = new Vertex(vertexPosition.Xy, quad.Color, quad.TexCoords[i], textureIndex);
-                this.CurrentVertexCount++;
+                this.Storage.Vertices[this.Storage.VertexCount++] = new Vertex(vertexPosition.Xy, quad.Color, quad.TexCoords[i], textureIndex);
+                this.Storage.Stats.CurrentVertexCount++;
             }
             this.Storage.IndicesCount += 6;
+            this.Storage.Stats.CurrentQuadCount++;
         }
         public void StartScene(in Vector2 cameraPosition) {
+            this.Storage.Stats.TotalFlushCount = 0;
             GL.Scissor(0, 0, GameHandler.WindowSize.X, GameHandler.WindowSize.Y);
             unsafe {
                 this.RenderCamera.Recalculate(cameraPosition);
-                this.CameraBuffer.SetData(this.RenderCamera.GetViewProjection(), sizeof(Matrix4));
+                this.CameraBuffer.SetData(this.RenderCamera.ViewProjection, sizeof(Matrix4));
             }
             this.StartBatch();
         }
         public void EndScene() {
             this.GenerateQuadGeometry();
             this.Flush();
-            this.Storage.PrevFlushes = this.Storage.Flushes;
-            this.Storage.Flushes = 0;
-            this.PrevVertexCount = this.CurrentVertexCount;
-            this.CurrentVertexCount = 0;
             this.Storage.DispatchedQuads.Clear();
         }
         public void StartBatch() {
@@ -269,23 +271,19 @@ namespace Game.Graphics {
             this.Flush();
             this.StartBatch();
         }
-        public void Flush() {
+        public unsafe void Flush() {
             if (this.Storage.VertexCount > 0) {
-                this.Storage.Flushes++;
+                this.Storage.Stats.TotalFlushCount++;
                 
                 // Upload vertex data
                 this.VertexArray.Bind();
                 this.VertexBuffer.Bind();
                 this.TextureShader.Bind();
-                unsafe {
-                    this.VertexBuffer.SetData(this.Storage.VertexArrayHandle.AddrOfPinnedObject(), sizeof(Vertex) * this.Storage.VertexCount);
-                }
+                this.VertexBuffer.SetData(this.Storage.VertexArrayHandle.AddrOfPinnedObject(), sizeof(Vertex) * this.Storage.VertexCount);
                 
                 // Bind textures
                 this.BindTextureUnits();
                 this.DrawIndexed(PrimitiveType.Triangles);
-
-                this.TextureShader.Unbind();
             }
         }
         public void OnResize(ResizeEventArgs args) {
@@ -321,12 +319,6 @@ namespace Game.Graphics {
                 this.Storage.TextureUnits[i].BindToUnit(i);
             }
         }
-        public int TotalFlushes {
-            get { return this.Storage.PrevFlushes; }
-        }
-        public int TotalVertices {
-            get { return this.TotalFlushes * this.Storage.MAX_VERTICES; }
-        }
         public void Dispose() {
             this.RenderCamera.Dispose();
             this.Storage.Dispose();
@@ -338,7 +330,16 @@ namespace Game.Graphics {
             GC.Collect();
         }
         public void LoadTexture(string name, string location) {
-            this.AddTexture(name, Texture.LoadTexture(location));
+            this.AddTexture(name, Texture.Load(location));
+        }
+        public Vector4[] DefaultQuad {
+            get {
+                switch(RendererState.QuadRenderMode) {
+                    case QuadMode.CENTER: return this.Storage.CenteredQuad;
+                    case QuadMode.CORNER: return this.Storage.CornerQuad;
+                    default: return this.Storage.CenteredQuad;
+                }
+            }
         }
         public Texture GetTexture(string name) {
             if (this.Storage.Textures.TryGetValue(name, out Texture tex)) {
@@ -347,6 +348,9 @@ namespace Game.Graphics {
                 GameHandler.Logger.Error($"Texture {name} doesn't exist!");
                 return this.Storage.Textures["default"];
             }
+        }
+        public string GetStats() {
+            return $"Mem: {Math.Round((double)System.GC.GetTotalMemory(false) / (1000 * 1000), 2)}Mb, {this.Storage.Stats.ToString()}";
         }
     }
 }

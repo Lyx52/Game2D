@@ -9,7 +9,7 @@ namespace Game.Graphics {
     {
         public readonly int vaoID;
         private BufferObject<T1> IndexBuffer;
-        private BufferObject<T1> VertexBuffer;
+        private BufferObject<T2> VertexBuffer;
 
         public VertexArray() {
             this.vaoID = GL.GenVertexArray();
@@ -21,18 +21,17 @@ namespace Game.Graphics {
             this.IndexBuffer = buffer;
             this.IndexBuffer.Bind();
         }
-        public void AddVertexBuffer(BufferObject<T2> buffer, BufferLayout layout) {
-            if (!layout.IsValid()) {
-                GameHandler.Logger.Error("When adding a VertexBuffer it must have a valid layout!");
-            }
-
+        public void AddVertexBuffer(BufferObject<T2> buffer, VertexLayout layout) {
             this.Bind();
             buffer.Bind();
-            foreach (BufferElement element in layout.Elements) {
+
+            foreach (VertexElement element in layout.Elements) {
                 GL.EnableVertexAttribArray(element.Index);
-                GL.VertexAttribPointer(element.Index, element.ComponentCount, element.AttribType, element.Normalized, layout.Stride, element.Offset);
+                GL.VertexAttribPointer(element.Index, element.Components, element.Type, element.Normalized, layout.Stride, element.Offset);
                 GLHelper.CheckGLError("SetAttribPointer");
             }
+
+            this.VertexBuffer = buffer;
         }
         public void Dispose() {
             GL.DeleteVertexArray(this.vaoID);

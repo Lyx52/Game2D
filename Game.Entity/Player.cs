@@ -1,6 +1,7 @@
 using OpenTK.Mathematics;
 using Game.Graphics;
 using Game.Utils;
+using Game.World;
 
 namespace Game.Entity {
     public class Player : DrawableEntity {

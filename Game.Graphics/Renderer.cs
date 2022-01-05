@@ -218,7 +218,7 @@ namespace Game.Graphics {
                 this.CameraBuffer = new BufferObject<float>(sizeof(Matrix4), BufferTarget.UniformBuffer, uniform_binding: 1);
             }
             // Init renderer camera camera draw size is window width divided by aspect ratio
-            this.RenderCamera = new OrthoCamera(this.DrawSize);
+            this.RenderCamera = new OrthoCamera(-400, 400, -300, 300);
 
             // Collect garbage, for some reason garbage collector collects our buffers
             GC.Collect();
@@ -288,7 +288,6 @@ namespace Game.Graphics {
         }
         public void OnResize(ResizeEventArgs args) {
             GameHandler.WindowSize = args.Size;
-            this.DrawSize = Vector2i.Divide(args.Size, GameHandler.AspectRatio);
             GL.Viewport(0, 0, args.Size.X, args.Size.Y);   
         }
         public void DrawIndexed(PrimitiveType type) {

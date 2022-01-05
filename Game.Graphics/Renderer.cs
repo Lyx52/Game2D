@@ -161,7 +161,6 @@ namespace Game.Graphics {
         private BufferObject<float> VertexBuffer;
         private BufferObject<uint> IndexBuffer;
         private BufferObject<float> CameraBuffer;
-        public Vector2 DrawSize { get; set; }
         public static Vector2[] DefaultUVCoords;
         
         public OrthoCamera RenderCamera;
@@ -173,7 +172,6 @@ namespace Game.Graphics {
                 new Vector2(0.0f, 0.0f),
                 new Vector2(0.0f, 1.0f)
             };
-            this.DrawSize = new Vector2(width, height);
             this.RendererState = new GLState();
             this.RendererState.SetClearColor(0.0f, 0.0f, 1.0f, 1.0f);
             this.RendererState.AlphaBlend.Enable();
@@ -218,7 +216,7 @@ namespace Game.Graphics {
                 this.CameraBuffer = new BufferObject<float>(sizeof(Matrix4), BufferTarget.UniformBuffer, uniform_binding: 1);
             }
             // Init renderer camera camera draw size is window width divided by aspect ratio
-            this.RenderCamera = new OrthoCamera(-400, 400, -300, 300);
+            this.RenderCamera = new OrthoCamera(-(width / 2), (width / 2), -(height / 2), (height / 2));
 
             // Collect garbage, for some reason garbage collector collects our buffers
             GC.Collect();

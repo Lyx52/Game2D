@@ -1,6 +1,5 @@
 using OpenTK.Mathematics;
-using SimplexNoise;
-using System.Runtime.InteropServices;
+using System;
 
 namespace Game.World {
     public struct Chunk {

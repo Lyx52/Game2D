@@ -34,7 +34,7 @@ namespace Game.Core {
             this.MouseMove += Mouse.OnMouseMove;
 
             // Create renderer
-            this.Renderer = new Renderer(GameHandler.MAX_BUFFER_MEMORY, Vector2i.Divide(GameHandler.WindowSize, GameHandler.AspectRatio));
+            this.Renderer = new Renderer(GameHandler.MAX_BUFFER_MEMORY, GameHandler.WindowSize.X, GameHandler.WindowSize.Y);
             this.Resize += this.Renderer.OnResize;
 
             Renderer.LoadTexture("grass", "./res/textures/grass.png");

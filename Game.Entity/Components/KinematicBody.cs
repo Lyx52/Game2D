@@ -6,7 +6,7 @@ namespace Game.Entity {
         public Vector2 Velocity { get; set; }
         public KinematicBody(float x, float y) : base(x, y) {
             this.Drag = 0.8f;
-            this.Acceleration = 128D;
+            this.Acceleration = 256D;
             this.Velocity = Vector2.Zero;
         }
         public override string ToString() {

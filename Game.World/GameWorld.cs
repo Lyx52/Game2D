@@ -9,29 +9,26 @@ using SimplexNoise;
 namespace Game.World {
     public class GameWorld : IDisposable {
         public List<Chunk> Chunks;
+        private static int MAX_CHUNK_DELTA = 2; // Whats the chunks max delta between current player chunk and itself 
         private static int CHUNK_SIZE = 32;
-        private static float TILE_SIZE = 8F;
-        private static float NOISE_SCALE = 0.05F;
+        private static float TILE_SIZE = 4F;
+        private static float NOISE_SCALE = 0.0125F;
         private static float TILE_SCALAR = CHUNK_SIZE * TILE_SIZE;
         public EntityManager EntityHandler { get; }
-        private Random Rnd;
         private SpriteSheet WorldSpriteSheet;
         private Vector2i[] TileMapping = {
             new Vector2i(0, 0),
             new Vector2i(1, 0),
             new Vector2i(2, 0)
         };
-        public Vector2i LastPlayerChunk = Vector2i.Zero;
         public GameWorld(int seed) {
             this.Chunks = new List<Chunk>();
             this.EntityHandler = new EntityManager();
-            this.Rnd = new Random(seed);
             Noise.Seed = seed;
 
             this.WorldSpriteSheet = new SpriteSheet(GameHandler.Renderer.GetTexture("spritesheet"), 3, 1);
             this.EntityHandler.SpawnPlayer(0, 0, Application.Keyboard, Application.Mouse);
-            // NOTE: Each entity is about 470-500 bytes
-            // for (int i = 0; i < 100; i++) {
+            // for (int i = 0; i < 1000; i++) {
             //     TestEntity entity = new TestEntity(i, (float)Rnd.NextDouble());
             //     entity.Sprite.SpriteTexture = GameHandler.Renderer.GetTexture("grass");
             //     this.EntityHandler.AddEntity(entity);
@@ -39,21 +36,24 @@ namespace Game.World {
         }
         public void GenerateGeometry(Vector2 position) {
             Vector2i center = GetChunkPosition(position);
-            Vector2i size = new Vector2i((int)CHUNK_SIZE, (int)CHUNK_SIZE);
-            this.Chunks.Add(GenerateChunk((center + new Vector2i(-1, 0)) * size));
-            this.Chunks.Add(GenerateChunk((center + new Vector2i(1, 0)) * size));
-            this.Chunks.Add(GenerateChunk((center + new Vector2i(0, 1)) * size));
-            this.Chunks.Add(GenerateChunk((center + new Vector2i(0, -1)) * size));
+            
+            for (int row = -1; row < 2; row++) {
+                for (int col = -1; col < 2; col++) {
+                    // Generate a new chunk at chunkPos if chunk list dosnt already have it...
+                    Vector2i chunkPos = Vector2i.Multiply(center + new Vector2i(col, row), CHUNK_SIZE);
+                    if (!this.Chunks.Exists(chunk => chunk.Position == chunkPos))
+                        this.Chunks.Add(GenerateChunk(chunkPos));
+                }
+            }
 
-            this.Chunks.Add(GenerateChunk((center + new Vector2i(-1, -1)) * size));
-            this.Chunks.Add(GenerateChunk((center + new Vector2i(1, 1)) * size));
-            
-            this.Chunks.Add(GenerateChunk(center * size));
-            
-            this.Chunks.Add(GenerateChunk((center + new Vector2i(-1, 1)) * size));
-            this.Chunks.Add(GenerateChunk((center + new Vector2i(1, -1)) * size));
+            // Remove chunk if its out of range
+            this.Chunks.RemoveAll(chunk => {
+                Vector2i delta = (Vector2i.Divide(chunk.Position, CHUNK_SIZE) - center);
+                return Math.Abs(delta.X) >= MAX_CHUNK_DELTA || Math.Abs(delta.Y) >= MAX_CHUNK_DELTA;
+            });
         }
         public void Render(Renderer renderer) {
+            // Render only visible chunks
             foreach(Chunk chunk in this.Chunks) {
                 this.DrawChunk(renderer, chunk);
             }
@@ -87,9 +87,7 @@ namespace Game.World {
         }
         public void Update(double dt) {
             this.EntityHandler.Update(dt);
-            this.Chunks.Clear();
             this.GenerateGeometry(this.GetPlayer().KinematicBody.Position);
-            GameHandler.Logger.Debug($"PlayerCurrentChunk{GetChunkPosition(this.GetPlayer().KinematicBody.Position)}");
         }
         public Player GetPlayer() {
             return this.EntityHandler.GetPlayer();

@@ -249,12 +249,16 @@ namespace Game.Graphics {
             this.Storage.Stats.CurrentQuadCount++;
         }
         public void StartScene(in Vector2 cameraPosition) {
-            this.Storage.Stats.TotalFlushCount = 0;
+            GL.Clear(ClearBufferMask.ColorBufferBit);
             GL.Scissor(0, 0, GameHandler.WindowSize.X, GameHandler.WindowSize.Y);
+
+            this.Storage.Stats.TotalFlushCount = 0;
+            
             unsafe {
                 this.RenderCamera.Recalculate(cameraPosition);
                 this.CameraBuffer.SetData(this.RenderCamera.ViewProjection, sizeof(Matrix4));
             }
+            
             this.StartBatch();
         }
         public void EndScene() {

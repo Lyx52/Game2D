@@ -7,11 +7,19 @@ using OpenTK.Mathematics;
 using SimplexNoise;
 
 namespace Game.World {
-    public class GameWorld : IDisposable {
+    public struct Chunk {
+        public Vector2i Position { get; private set; }
+        public uint[,] Tilemap { get; set; }
+        public Chunk(Vector2i position, int width, int height) {
+            this.Tilemap = new uint[width, height];
+            this.Position = position;
+        }
+    }
+    public class World : IDisposable {
         public List<Chunk> Chunks;
-        private static int MAX_CHUNK_DELTA = 2; // Whats the chunks max delta between current player chunk and itself 
+        private static int MAX_CHUNK_DELTA = 2; // Whats the chunks max delta position between current player chunk and itself 
         private static int CHUNK_SIZE = 32;
-        private static float TILE_SIZE = 4F;
+        private static float TILE_SIZE = 16F;
         private static float NOISE_SCALE = 0.0125F;
         private static float TILE_SCALAR = CHUNK_SIZE * TILE_SIZE;
         public EntityManager EntityHandler { get; }
@@ -21,7 +29,7 @@ namespace Game.World {
             new Vector2i(1, 0),
             new Vector2i(2, 0)
         };
-        public GameWorld(int seed) {
+        public World(int seed) {
             this.Chunks = new List<Chunk>();
             this.EntityHandler = new EntityManager();
             Noise.Seed = seed;
@@ -36,27 +44,32 @@ namespace Game.World {
         }
         public void GenerateGeometry(Vector2 position) {
             Vector2i center = GetChunkPosition(position);
-            
-            for (int row = -1; row < 2; row++) {
-                for (int col = -1; col < 2; col++) {
+            GameHandler.Profiler.StartSection("ChunkGeneration");
+            for (int row = -(MAX_CHUNK_DELTA - 1); row < MAX_CHUNK_DELTA; row++) {
+                for (int col = -(MAX_CHUNK_DELTA - 1); col < MAX_CHUNK_DELTA; col++) {
                     // Generate a new chunk at chunkPos if chunk list dosnt already have it...
                     Vector2i chunkPos = Vector2i.Multiply(center + new Vector2i(col, row), CHUNK_SIZE);
-                    if (!this.Chunks.Exists(chunk => chunk.Position == chunkPos))
-                        this.Chunks.Add(GenerateChunk(chunkPos));
+                    if (this.Chunks.Exists(chunk => chunk.Position == chunkPos))
+                        continue;
+                    this.Chunks.Add(GenerateChunk(chunkPos));
                 }
             }
-
+            GameHandler.Profiler.EndSection("ChunkGeneration");
+            GameHandler.Profiler.StartSection("ChunkRemoval");
             // Remove chunk if its out of range
             this.Chunks.RemoveAll(chunk => {
                 Vector2i delta = (Vector2i.Divide(chunk.Position, CHUNK_SIZE) - center);
                 return Math.Abs(delta.X) >= MAX_CHUNK_DELTA || Math.Abs(delta.Y) >= MAX_CHUNK_DELTA;
             });
+            GameHandler.Profiler.EndSection("ChunkRemoval");
         }
-        public void Render(Renderer renderer) {
+        public void Render(in Renderer renderer) {
             // Render only visible chunks
-            foreach(Chunk chunk in this.Chunks) {
+            GameHandler.Profiler.StartSection("ChunkRendering");
+            foreach (Chunk chunk in this.Chunks) {
                 this.DrawChunk(renderer, chunk);
             }
+            GameHandler.Profiler.EndSection("ChunkRendering");
             this.EntityHandler.Render(renderer);
         }
         public Chunk GenerateChunk(Vector2i position, int offsetX=0) {
@@ -72,14 +85,16 @@ namespace Game.World {
             float noise = Noise.CalcPixel2D(row, col, NOISE_SCALE);
             return (uint)(noise <= 75F ? 0 : noise <= 100F ? 2 : 1);
         }
-        private void DrawChunk(Renderer renderer, Chunk chunk) {
+        private void DrawChunk(in Renderer renderer, Chunk chunk) {
+            // GameHandler.Profiler.StartSection("SingleChunkRendering");
             for (int row = 0; row < chunk.Tilemap.GetLength(0); row++) {
                 for (int col = 0; col < chunk.Tilemap.GetLength(1); col++) {
                     this.DrawTile(renderer, new Vector2(col, row) + chunk.Position, this.TileMapping[chunk.Tilemap[row, col]]);
                 }
             }
+            // GameHandler.Profiler.EndSection("SingleChunkRendering");
         }
-        private void DrawTile(Renderer renderer, Vector2 position, Vector2i subsprite) {
+        private void DrawTile(in Renderer renderer, Vector2 position, Vector2i subsprite) {
             renderer.DispatchQuad(new DrawQuad2D(TILE_SIZE * position, new Vector2(TILE_SIZE), this.WorldSpriteSheet, subsprite));    
         }
         public static Vector2i GetChunkPosition(Vector2 position) {

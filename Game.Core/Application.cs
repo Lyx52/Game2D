@@ -15,7 +15,7 @@ namespace Game.Core {
         public static KeyboardHandler Keyboard { get; private set; }
         public static MouseHandler Mouse { get; private set; }
         public Renderer Renderer { get; }
-        public GameWorld World { get; protected set; }
+        public World.World World { get; protected set; }
         public Application(string title, int width, int height) : base(GameWindowSettings.Default, NativeWindowSettings.Default) {
             this.Size = new Vector2i(width, height);
             this.Title = title;
@@ -47,14 +47,14 @@ namespace Game.Core {
         }
         public void LoadWorld() {
             // Init world
-            this.World = new GameWorld(0);
+            this.World = new World.World(0);
         }
         protected override void OnRenderFrame(FrameEventArgs args)
-        {
-            GL.Clear(ClearBufferMask.ColorBufferBit);
+        {   
             Renderer.StartScene(this.World.GetPlayer().KinematicBody.Position);
             this.World.Render(this.Renderer);
             Renderer.EndScene();
+            
             base.OnRenderFrame(args);
             Context.SwapBuffers();
         }

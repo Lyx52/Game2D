@@ -17,6 +17,7 @@ namespace Game.Core {
         public Renderer Renderer { get; }
         public World.World World { get; protected set; }
         public Application(string title, int width, int height) : base(GameWindowSettings.Default, NativeWindowSettings.Default) {
+
             this.Size = new Vector2i(width, height);
             this.Title = title;
             this.UpdateFrequency = 30;

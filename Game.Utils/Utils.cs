@@ -19,7 +19,10 @@ namespace Game.Utils {
         public static string GetCWD() {
             return Directory.GetCurrentDirectory();
         }
-        public static FileStream GetFileStream(string filePath) {
+        public static FileStream OpenReadWriteStream(string filePath) {
+            return File.Open(filePath, FileMode.OpenOrCreate);
+        }
+        public static FileStream OpenReadStream(string filePath) {
             if (File.Exists(filePath)) {
                 return File.OpenRead(filePath); 
             } else {
@@ -28,7 +31,7 @@ namespace Game.Utils {
             } 
         }
         public static byte[] ReadFile(string filePath) {
-            using (FileStream fs = GetFileStream(filePath)) {
+            using (FileStream fs = OpenReadStream(filePath)) {
                 byte[] data = new byte[fs.Length];
                 try {
                     fs.Read(data, 0, data.Length);
@@ -38,12 +41,14 @@ namespace Game.Utils {
                 return data;
             }
         }
-        public static StreamWriter GetLogWriter(string logPath = "./logs/") {
-            if (!Directory.Exists(logPath)) {
-                Console.WriteLine($"Directory: {Directory.Exists(logPath)}");
-                Directory.CreateDirectory(logPath);
+        public static StreamWriter GetLogWriter(string logFolder="logs", string logFilePrefix="gamelog") {
+            string absolutePath = Path.Combine(GetCWD(), logFolder);
+            if (!Directory.Exists(absolutePath)) {
+                Directory.CreateDirectory(absolutePath);
             }
-            StreamWriter writer = new StreamWriter(Path.Combine(logPath, $"gamelog_{StringUtils.GetShortTime()}_{StringUtils.GetShortDate()}.log"));
+            string logPath = Path.Combine(absolutePath, $"{logFilePrefix}_{StringUtils.GetShortDate(seperator:"")}_{StringUtils.GetShortTime(seperator:"")}.log");
+            
+            StreamWriter writer = new StreamWriter(logPath);
             writer.WriteLine($"Log::Start - {DateTime.Now}");
             writer.Flush();
             return writer;
@@ -51,15 +56,33 @@ namespace Game.Utils {
         public static GCHandle GetObjHandle(object allocatedObject) {
             return GCHandle.Alloc(allocatedObject, GCHandleType.Pinned);
         }
+        public static byte[] StringAsBytes(string text) {
+            // Function that turns string into byte array + appends 0xFF at the end 
+            byte[] data = new byte[text.Length + 1];
+            Array.Copy(Encoding.UTF8.GetBytes(text), data, text.Length);
+            data[text.Length] = 0xFF; // Last byte is terminator 0xFF
+            return data;  
+        }
+        public static string ReadString(FileStream stream) {
+            // Reads string from stream, until it reaches 0xFF terminator
+            string output = "";
+            int data = stream.ReadByte();
+            do {
+                output += (char)data;
+                data = stream.ReadByte();
+            } while (data != 0xFF); // Terminator not reached
+
+            return output;
+        }
     }
     public static class StringUtils {
         
-        public static string GetShortTime() {
-            return $"{DateTime.Now.Hour}:{DateTime.Now.Minute}:{DateTime.Now.Second}";
+        public static string GetShortTime(string seperator=":") {
+            return $"{DateTime.Now.Hour}{seperator}{DateTime.Now.Minute}{seperator}{DateTime.Now.Second}";
         }
 
-        public static string GetShortDate() {
-            return $"{DateTime.Now.ToShortDateString().Replace('/', '.')}";
+        public static string GetShortDate(string seperator=".") {
+            return $"{DateTime.Now.Year}{seperator}{DateTime.Now.Month}{seperator}{DateTime.Now.Day}";
         }
 
         public static string GetBytesAsString(byte[] array) {

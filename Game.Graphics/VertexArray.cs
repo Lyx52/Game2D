@@ -2,25 +2,29 @@ using OpenTK.Graphics.OpenGL4;
 using System;
 
 namespace Game.Graphics {
-    public class VertexArray<T1, T2> : IDisposable 
-        where T1 : unmanaged 
-        where T2 : unmanaged 
+    public class VertexArray<TIndexType, TVertexType> : IDisposable 
+        where TIndexType : unmanaged 
+        where TVertexType : unmanaged 
     {
         public readonly int vaoID;
-        private BufferObject<T1> IndexBuffer;
-        private BufferObject<T2> VertexBuffer;
+        private BufferObject<TIndexType> IndexBuffer;
+        private BufferObject<TVertexType> VertexBuffer;
 
         public VertexArray() {
             this.vaoID = GL.GenVertexArray();
         }
+        public VertexArray(VertexLayout layout, int MAX_INDICES, int MAX_VERTICES) {
+            this.IndexBuffer = new BufferObject<TIndexType>(MAX_INDICES, BufferTarget.ElementArrayBuffer);
+            this.VertexBuffer = new BufferObject<TVertexType>(MAX_VERTICES, BufferTarget.ArrayBuffer);
+        }
         public void Bind() {
             GL.BindVertexArray(this.vaoID);
         }
-        public void SetIndexBuffer(BufferObject<T1> buffer) {
+        public void SetIndexBuffer(BufferObject<TIndexType> buffer) {
             this.IndexBuffer = buffer;
             this.IndexBuffer.Bind();
         }
-        public void AddVertexBuffer(BufferObject<T2> buffer, VertexLayout layout) {
+        public void AddVertexBuffer(BufferObject<TVertexType> buffer, VertexLayout layout) {
             this.Bind();
             buffer.Bind();
 

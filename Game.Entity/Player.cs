@@ -27,7 +27,6 @@ namespace Game.Entity {
             
             // Acceleration vector is equal to UP/DOWN key multiplied by acceleration
             Vector2 acceleration = new Vector2(0, this.Controller.GetDirectional().Y * (float)(dt *this.KinematicBody.Acceleration));
-            
             // We rotate acceleration vector to sprite angle and add it to velocity
             this.KinematicBody.Velocity += MathUtils.Rotate(acceleration, this.KinematicBody.Rotation * MathUtils.Deg2Rad);
             

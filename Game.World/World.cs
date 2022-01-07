@@ -44,7 +44,7 @@ namespace Game.World {
         }
         public void GenerateGeometry(Vector2 position) {
             Vector2i center = GetChunkPosition(position);
-            GameHandler.Profiler.StartSection("ChunkGeneration");
+            //GameHandler.Profiler.StartSection("ChunkGeneration");
             for (int row = -(MAX_CHUNK_DELTA - 1); row < MAX_CHUNK_DELTA; row++) {
                 for (int col = -(MAX_CHUNK_DELTA - 1); col < MAX_CHUNK_DELTA; col++) {
                     // Generate a new chunk at chunkPos if chunk list dosnt already have it...
@@ -54,22 +54,22 @@ namespace Game.World {
                     this.Chunks.Add(GenerateChunk(chunkPos));
                 }
             }
-            GameHandler.Profiler.EndSection("ChunkGeneration");
-            GameHandler.Profiler.StartSection("ChunkRemoval");
+            //GameHandler.Profiler.EndSection("ChunkGeneration");
+            //GameHandler.Profiler.StartSection("ChunkRemoval");
             // Remove chunk if its out of range
             this.Chunks.RemoveAll(chunk => {
                 Vector2i delta = (Vector2i.Divide(chunk.Position, CHUNK_SIZE) - center);
                 return Math.Abs(delta.X) >= MAX_CHUNK_DELTA || Math.Abs(delta.Y) >= MAX_CHUNK_DELTA;
             });
-            GameHandler.Profiler.EndSection("ChunkRemoval");
+            //GameHandler.Profiler.EndSection("ChunkRemoval");
         }
         public void Render(in Renderer renderer) {
             // Render only visible chunks
-            GameHandler.Profiler.StartSection("ChunkRendering");
+            //GameHandler.Profiler.StartSection("ChunkRendering");
             foreach (Chunk chunk in this.Chunks) {
                 this.DrawChunk(renderer, chunk);
             }
-            GameHandler.Profiler.EndSection("ChunkRendering");
+            //GameHandler.Profiler.EndSection("ChunkRendering");
             this.EntityHandler.Render(renderer);
         }
         public Chunk GenerateChunk(Vector2i position, int offsetX=0) {
@@ -83,7 +83,7 @@ namespace Game.World {
         }
         public uint GetTileSprite(int row, int col) {
             float noise = Noise.CalcPixel2D(row, col, NOISE_SCALE);
-            return (uint)(noise <= 75F ? 0 : noise <= 100F ? 2 : 1);
+            return (uint)(noise <= 75F ? 0 : noise <= 125F ? 2 : 1);
         }
         private void DrawChunk(in Renderer renderer, Chunk chunk) {
             // GameHandler.Profiler.StartSection("SingleChunkRendering");

@@ -2,5 +2,6 @@
 .vs
 bin
 obj
+logs
 push.sh
 pull.sh

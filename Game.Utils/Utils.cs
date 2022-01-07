@@ -19,8 +19,13 @@ namespace Game.Utils {
         public static string GetCWD() {
             return Directory.GetCurrentDirectory();
         }
-        public static FileStream OpenReadWriteStream(string filePath) {
-            return File.Open(filePath, FileMode.OpenOrCreate);
+        public static FileStream OpenWriteStream(string filePath) {
+            try {
+                return File.Open(filePath, FileMode.Create);
+            } catch(IOException e) {
+                GameHandler.Logger.Critical($"File {filePath} could not be  created!\n{e}");
+                return null;
+            }
         }
         public static FileStream OpenReadStream(string filePath) {
             if (File.Exists(filePath)) {

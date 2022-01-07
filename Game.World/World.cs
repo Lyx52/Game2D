@@ -1,10 +1,15 @@
 using Game.Entity;
 using Game.Core;
 using Game.Graphics;
+using Game.Utils;
+
 using System;
 using System.Collections.Generic;
+using System.IO;
+
 using OpenTK.Mathematics;
 using SimplexNoise;
+
 
 namespace Game.World {
     public struct Chunk {
@@ -24,18 +29,28 @@ namespace Game.World {
         private static float TILE_SCALAR = CHUNK_SIZE * TILE_SIZE;
         public EntityManager EntityHandler { get; }
         private SpriteSheet WorldSpriteSheet;
+        private FileStream WorldStream;
+        private bool IsCreated = false;
         private Vector2i[] TileMapping = {
             new Vector2i(0, 0),
             new Vector2i(1, 0),
             new Vector2i(2, 0)
         };
-        public World(int seed) {
+        public World(int seed, string fileName) {
             this.Chunks = new List<Chunk>();
             this.EntityHandler = new EntityManager();
             Noise.Seed = seed;
 
             this.WorldSpriteSheet = new SpriteSheet(GameHandler.Renderer.GetTexture("spritesheet"), 3, 1);
             this.EntityHandler.SpawnPlayer(0, 0, Application.Keyboard, Application.Mouse);
+            this.IsCreated = File.Exists(fileName);
+            if (this.IsCreated) {
+                this.WorldStream = IOUtils.OpenReadStream(fileName);
+                this.LoadWorld();
+                this.WorldStream.Close();
+            }
+            this.WorldStream = IOUtils.OpenWriteStream(fileName);
+
             // for (int i = 0; i < 1000; i++) {
             //     TestEntity entity = new TestEntity(i, (float)Rnd.NextDouble());
             //     entity.Sprite.SpriteTexture = GameHandler.Renderer.GetTexture("grass");
@@ -107,7 +122,26 @@ namespace Game.World {
         public Player GetPlayer() {
             return this.EntityHandler.GetPlayer();
         }
+        public void LoadWorld() {
+            List<Tag> save = Tag.ReadTags(this.WorldStream);
+            foreach (Tag tag in save) {
+                switch(tag.Name) {
+                    case "player": {
+                        this.GetPlayer().LoadPlayerData((CompoundTag)tag);
+                    } break;
+                    default: {
+                        GameHandler.Logger.Warn($"Unhandled tag in save file {tag.Name}!");
+                    } break;
+                }
+            }
+        }
         public void Dispose() {
+            Tag.WriteTags(this.WorldStream, new List<Tag>(){
+                this.GetPlayer().GetPlayerTag(),
+                new StringTag("WorldSeed", Noise.Seed.ToString()),
+                new EndTag()
+            });
+            this.WorldStream.Close();
             this.EntityHandler.Dispose();
         }
     }

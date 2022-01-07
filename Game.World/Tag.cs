@@ -43,7 +43,6 @@ namespace Game.World {
             while (Tag.PeekNextTag(stream) != TagType.EndTag) {
                 tags.Add(Tag.ReadTag(stream));
             }
-            stream.Close();
             return tags;
         }
         public static Tag ReadTag(FileStream stream) {
@@ -73,9 +72,11 @@ namespace Game.World {
                 case TagType.CompoundTag: {
                     byte[] data = new byte[4];
                     stream.Read(data, 0, 4);
-                    List<Tag> tags = new List<Tag>();
-                    for (int i = 0; i < BitConverter.ToInt32(data); i++)
-                        tags.Add(Tag.ReadTag(stream));
+                    Dictionary<string, Tag> tags = new Dictionary<string, Tag>();
+                    for (int i = 0; i < BitConverter.ToInt32(data); i++) {
+                        Tag tag = Tag.ReadTag(stream);
+                        tags.Add(tag.Name, tag);
+                    }
                     
                     return new CompoundTag(tagName, tags);
                 }
@@ -89,6 +90,7 @@ namespace Game.World {
                     return new ByteArrayTag(tagName, data);
                 }
                 case TagType.BaseTag:
+                case TagType.EndTag:
                 default:
                     throw new InvalidDataException($"Invalid tag type {type}!");
             }
@@ -199,10 +201,41 @@ namespace Game.World {
         }
     }
     public class CompoundTag : Tag {
-        public List<Tag> Tags { get; set; }
-        public CompoundTag(string name) : this(name, new List<Tag>()) {}
+        public Dictionary<string, Tag> Tags { get; set; }
+        public CompoundTag(string name) : this(name, new Dictionary<string, Tag>()) {}
         public CompoundTag(string name, List<Tag> tags) : base(name, TagType.CompoundTag) {
+            this.Tags = new Dictionary<string, Tag>();
+            foreach (Tag tag in tags)
+                this.Tags.Add(tag.Name, tag);
+        }
+        public CompoundTag(string name, Dictionary<string, Tag> tags) : base(name, TagType.CompoundTag) {
             this.Tags = tags;
+        }
+        public CompoundTag GetCompoundTag(string key) {
+            return (CompoundTag)this.GetTag(key);
+        }
+        public DoubleTag GetDoubleTag(string key) {
+            return (DoubleTag)this.GetTag(key);
+        }
+        public FloatTag GetFloatTag(string key) {
+            return (FloatTag)this.GetTag(key);
+        }
+        public IntTag GetIntTag(string key) {
+            return (IntTag)this.GetTag(key);
+        }
+        public StringTag GetStringTag(string key) {
+            return (StringTag)this.GetTag(key);
+        }
+        public ByteArrayTag GetByteArrayTag(string key) {
+            return (ByteArrayTag)this.GetTag(key);
+        }
+        private Tag GetTag(string key) {
+            if (this.Tags.TryGetValue(key, out Tag tag)) {
+                return tag;
+            } else {
+                GameHandler.Logger.Critical($"Compound tag {this.Name} does not contain {key}!");
+                return null;
+            }
         }
         public override void WriteTag(FileStream stream)
         {
@@ -216,7 +249,7 @@ namespace Game.World {
             stream.Write(BitConverter.GetBytes(this.Tags.Count));
 
             // Write each of the tags individually
-            foreach (Tag tag in this.Tags) {
+            foreach (Tag tag in this.Tags.Values) {
                 tag.WriteTag(stream);
             }
         }

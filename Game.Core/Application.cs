@@ -48,7 +48,7 @@ namespace Game.Core {
         }
         public void LoadWorld() {
             // Init world
-            this.World = new World.World(0);
+            this.World = new World.World(0, "./saves/world.bin");
         }
         protected override void OnRenderFrame(FrameEventArgs args)
         {   

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Collections;
 using OpenTK.Mathematics;
 
 namespace Game.Utils {
@@ -61,13 +62,6 @@ namespace Game.Utils {
         public static GCHandle GetObjHandle(object allocatedObject) {
             return GCHandle.Alloc(allocatedObject, GCHandleType.Pinned);
         }
-        public static byte[] StringAsBytes(string text) {
-            // Function that turns string into byte array + appends 0xFF at the end 
-            byte[] data = new byte[text.Length + 1];
-            Array.Copy(Encoding.UTF8.GetBytes(text), data, text.Length);
-            data[text.Length] = 0xFF; // Last byte is terminator 0xFF
-            return data;  
-        }
         public static string ReadString(FileStream stream) {
             // Reads string from stream, until it reaches 0xFF terminator
             string output = "";
@@ -89,13 +83,12 @@ namespace Game.Utils {
         public static string GetShortDate(string seperator=".") {
             return $"{DateTime.Now.Year}{seperator}{DateTime.Now.Month}{seperator}{DateTime.Now.Day}";
         }
-
-        public static string GetBytesAsString(byte[] array) {
-            string output = "";
-            foreach (byte value in array) {
-                output += $"{value} ";
-            }
-            return output;
+        public static byte[] StringAsBytes(string text) {
+            // Function that turns string into byte array + appends 0xFF at the end 
+            byte[] data = new byte[text.Length + 1];
+            Array.Copy(Encoding.UTF8.GetBytes(text), data, text.Length);
+            data[text.Length] = 0xFF; // Last byte is terminator 0xFF
+            return data;  
         }
     }
     public static class ArrayUtils {
@@ -106,6 +99,32 @@ namespace Game.Utils {
                 }
             }
             return -1;
+        }
+        public static T[] Flatten<T>(T[,] array) {
+            T[] output = new T[array.GetLength(0) * array.GetLength(1)];
+            IEnumerator enumerator = array.GetEnumerator();
+            int i = 0;
+            while(enumerator.MoveNext()) {
+                output[i++] = (T)enumerator.Current;
+            }
+            return output;
+        }
+        public static T[,] To2DArray<T>(T[] array, int width, int height) {
+            if ((width * height) != array.Length)
+                GameHandler.Logger.Critical("Invalid width/height passed!");
+                
+            IEnumerator enumerator = array.GetEnumerator();
+            T[,] output = new T[height, width];
+            int row = 0;
+            int col = 0;
+            foreach (T value in array) {
+                output[row, col++] = value;
+                if (col >= width) {
+                    col = 0;
+                    row++;
+                }
+            }
+            return output;
         }
     }
     public static class MathUtils {

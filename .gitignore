@@ -3,5 +3,6 @@
 bin
 obj
 logs
+saves
 push.sh
 pull.sh

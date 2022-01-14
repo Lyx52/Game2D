@@ -20,6 +20,13 @@ namespace Game.World {
             this.Name = name;
             this.Type = type;
         }
+        public static string TagsAsString(List<Tag> tags) {
+            string output = "";
+            foreach(Tag tag in tags) {
+                output += $"{tag.ToString()}\n";
+            }
+            return output;
+        }
         public abstract void WriteTag(FileStream stream);
         public static TagType ReadTagType(FileStream stream) {
             return (TagType)stream.ReadByte();
@@ -95,6 +102,10 @@ namespace Game.World {
                     throw new InvalidDataException($"Invalid tag type {type}!");
             }
         }
+        public override string ToString()
+        {
+            return $"{this.Type}[{this.Name}]";
+        }
     }
     public class EndTag : Tag {
         public EndTag() : base("END_TAG", TagType.EndTag) {}
@@ -104,7 +115,7 @@ namespace Game.World {
             stream.WriteByte((byte)this.Type);
             
             // Write tag name
-            stream.Write(IOUtils.StringAsBytes(this.Name));
+            stream.Write(StringUtils.StringAsBytes(this.Name));
         }
     }
     public class IntTag : Tag {
@@ -119,10 +130,14 @@ namespace Game.World {
             stream.WriteByte((byte)this.Type);
             
             // Write tag name
-            stream.Write(IOUtils.StringAsBytes(this.Name));
+            stream.Write(StringUtils.StringAsBytes(this.Name));
 
             // Write data
             stream.Write(BitConverter.GetBytes(this.Value));
+        }
+        public override string ToString()
+        {
+            return $"{base.ToString()} - {this.Value}";
         }
     }
     public class DoubleTag : Tag {
@@ -137,10 +152,14 @@ namespace Game.World {
             stream.WriteByte((byte)this.Type);
             
             // Write tag name
-            stream.Write(IOUtils.StringAsBytes(this.Name));
+            stream.Write(StringUtils.StringAsBytes(this.Name));
 
             // Write data
             stream.Write(BitConverter.GetBytes(this.Value));
+        }
+        public override string ToString()
+        {
+            return $"{base.ToString()} - {this.Value}";
         }
     }
     public class FloatTag : Tag {
@@ -155,10 +174,14 @@ namespace Game.World {
             stream.WriteByte((byte)this.Type);
             
             // Write tag name
-            stream.Write(IOUtils.StringAsBytes(this.Name));
+            stream.Write(StringUtils.StringAsBytes(this.Name));
 
             // Write data
             stream.Write(BitConverter.GetBytes(this.Value));
+        }
+        public override string ToString()
+        {
+            return $"{base.ToString()} - {this.Value}";
         }
     }
     public class StringTag : Tag {
@@ -173,16 +196,20 @@ namespace Game.World {
             stream.WriteByte((byte)this.Type);
             
             // Write tag name
-            stream.Write(IOUtils.StringAsBytes(this.Name));
+            stream.Write(StringUtils.StringAsBytes(this.Name));
 
             // Write data
-            stream.Write(IOUtils.StringAsBytes(this.Value));
+            stream.Write(StringUtils.StringAsBytes(this.Value));
+        }
+        public override string ToString()
+        {
+            return $"{base.ToString()} - {this.Value}";
         }
     }
     public class ByteArrayTag : Tag {
         public byte[] Value;
         public ByteArrayTag(string name) : this(name, default(byte[])) {}
-        public ByteArrayTag(string name, byte[] value) : base(name, TagType.ByteArrayTag) {
+        public ByteArrayTag(string name, in byte[] value) : base(name, TagType.ByteArrayTag) {
             this.Value = value;
         }
         public override void WriteTag(FileStream stream)
@@ -191,7 +218,7 @@ namespace Game.World {
             stream.WriteByte((byte)this.Type);
             
             // Write tag name
-            stream.Write(IOUtils.StringAsBytes(this.Name));
+            stream.Write(StringUtils.StringAsBytes(this.Name));
 
             // Write length
             stream.Write(BitConverter.GetBytes(this.Value.Length));
@@ -210,6 +237,11 @@ namespace Game.World {
         }
         public CompoundTag(string name, Dictionary<string, Tag> tags) : base(name, TagType.CompoundTag) {
             this.Tags = tags;
+        }
+        public void AddTag(Tag tag) {
+            if (!this.Tags.TryAdd(tag.Name, tag)) {
+                GameHandler.Logger.Error($"Tag with the name {tag.Name} already exists!");
+            }
         }
         public CompoundTag GetCompoundTag(string key) {
             return (CompoundTag)this.GetTag(key);
@@ -243,7 +275,7 @@ namespace Game.World {
             stream.WriteByte((byte)this.Type);
             
             // Write tag name
-            stream.Write(IOUtils.StringAsBytes(this.Name));
+            stream.Write(StringUtils.StringAsBytes(this.Name));
 
             // Write number of tags it contains
             stream.Write(BitConverter.GetBytes(this.Tags.Count));
@@ -252,6 +284,14 @@ namespace Game.World {
             foreach (Tag tag in this.Tags.Values) {
                 tag.WriteTag(stream);
             }
+        }
+        public override string ToString()
+        {
+            string output = $"{base.ToString()} - (";
+            foreach (string key in this.Tags.Keys) {
+                output += $"{this.Tags[key].ToString()}";
+            }
+            return output + ")";
         }
     }
 }

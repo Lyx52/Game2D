@@ -9,7 +9,7 @@ namespace Game.Entity {
         public Player(float x, float y) : base() {
             this.AttachComponent(new KinematicBody(x, y));
             this.AttachComponent(new EntityController(this));
-            this.Sprite.SpriteTexture = GameHandler.Renderer.GetTexture("apple");
+            this.Sprite.SpriteTexture = GameHandler.Renderer.GetTexture("grass");
             this.Layer = RenderLayer.LAYER_2;
         }
         public override void Draw(Renderer renderer) {
@@ -61,6 +61,7 @@ namespace Game.Entity {
             
             CompoundTag position = playerTag.GetCompoundTag("Position");
             this.KinematicBody.Position = new Vector2(position.GetFloatTag("X").Value, position.GetFloatTag("Y").Value);
+            GameHandler.Logger.Debug($"Position {this.KinematicBody.Position}");
         }
         public override bool InRange(Entity target, float range)
         {

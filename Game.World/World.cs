@@ -14,9 +14,9 @@ using SimplexNoise;
 namespace Game.World {
     public struct Chunk {
         public Vector2i Position { get; private set; }
-        public uint[,] Tilemap { get; set; }
+        public byte[,] Tilemap { get; set; }
         public Chunk(Vector2i position, int width, int height) {
-            this.Tilemap = new uint[width, height];
+            this.Tilemap = new byte[width, height];
             this.Position = position;
         }
     }
@@ -24,12 +24,13 @@ namespace Game.World {
         public List<Chunk> Chunks;
         private static int MAX_CHUNK_DELTA = 2; // Whats the chunks max delta position between current player chunk and itself 
         private static int CHUNK_SIZE = 32;
-        private static float TILE_SIZE = 16F;
+        private static float TILE_SIZE = 2F;
         private static float NOISE_SCALE = 0.0125F;
         private static float TILE_SCALAR = CHUNK_SIZE * TILE_SIZE;
         public EntityManager EntityHandler { get; }
         private SpriteSheet WorldSpriteSheet;
         private FileStream WorldStream;
+        private FileStream ChunkStream;
         private bool IsCreated = false;
         private Vector2i[] TileMapping = {
             new Vector2i(0, 0),
@@ -43,13 +44,15 @@ namespace Game.World {
 
             this.WorldSpriteSheet = new SpriteSheet(GameHandler.Renderer.GetTexture("spritesheet"), 3, 1);
             this.EntityHandler.SpawnPlayer(0, 0, Application.Keyboard, Application.Mouse);
-            this.IsCreated = File.Exists(fileName);
+            this.IsCreated = File.Exists(fileName) && File.Exists("chunks.bin");
             if (this.IsCreated) {
                 this.WorldStream = IOUtils.OpenReadStream(fileName);
+                this.ChunkStream = IOUtils.OpenReadStream("chunks.bin");
                 this.LoadWorld();
                 this.WorldStream.Close();
             }
             this.WorldStream = IOUtils.OpenWriteStream(fileName);
+            this.ChunkStream = IOUtils.OpenWriteStream("chunks.bin");
 
             // for (int i = 0; i < 1000; i++) {
             //     TestEntity entity = new TestEntity(i, (float)Rnd.NextDouble());
@@ -74,7 +77,13 @@ namespace Game.World {
             // Remove chunk if its out of range
             this.Chunks.RemoveAll(chunk => {
                 Vector2i delta = (Vector2i.Divide(chunk.Position, CHUNK_SIZE) - center);
-                return Math.Abs(delta.X) >= MAX_CHUNK_DELTA || Math.Abs(delta.Y) >= MAX_CHUNK_DELTA;
+                bool mustBeRemoved = Math.Abs(delta.X) >= MAX_CHUNK_DELTA || Math.Abs(delta.Y) >= MAX_CHUNK_DELTA;
+                
+                // We save the chunks we remove from range
+                // if (mustBeRemoved)
+                //     this.SaveChunk(this.ChunkStream, chunk);
+
+                return mustBeRemoved;
             });
             //GameHandler.Profiler.EndSection("ChunkRemoval");
         }
@@ -87,6 +96,15 @@ namespace Game.World {
             //GameHandler.Profiler.EndSection("ChunkRendering");
             this.EntityHandler.Render(renderer);
         }
+        public void SaveChunk(FileStream stream, Chunk chunk) {
+            CompoundTag chunkTag = new CompoundTag($"Chunk_{chunk.Position}");
+            chunkTag.AddTag(new CompoundTag("ChunkPosition", new List<Tag>() {
+                new IntTag("X", chunk.Position.X),
+                new IntTag("Y", chunk.Position.Y)
+            }));
+            chunkTag.AddTag(new ByteArrayTag("ChunkData", ArrayUtils.Flatten(chunk.Tilemap)));
+            chunkTag.WriteTag(stream);
+        }
         public Chunk GenerateChunk(Vector2i position, int offsetX=0) {
             Chunk chunk = new Chunk(position, CHUNK_SIZE, CHUNK_SIZE);
             for (int row = 0; row < CHUNK_SIZE; row++) {
@@ -96,9 +114,9 @@ namespace Game.World {
             }
             return chunk;
         }
-        public uint GetTileSprite(int row, int col) {
+        public byte GetTileSprite(int row, int col) {
             float noise = Noise.CalcPixel2D(row, col, NOISE_SCALE);
-            return (uint)(noise <= 75F ? 0 : noise <= 125F ? 2 : 1);
+            return (byte)(noise <= 75F ? 0 : noise <= 125F ? 2 : 1);
         }
         private void DrawChunk(in Renderer renderer, Chunk chunk) {
             // GameHandler.Profiler.StartSection("SingleChunkRendering");
@@ -136,12 +154,15 @@ namespace Game.World {
             }
         }
         public void Dispose() {
-            Tag.WriteTags(this.WorldStream, new List<Tag>(){
+            List<Tag> WorldTags = new List<Tag>(){
                 this.GetPlayer().GetPlayerTag(),
                 new StringTag("WorldSeed", Noise.Seed.ToString()),
                 new EndTag()
-            });
+            };
+            GameHandler.Logger.Debug($"\n{Tag.TagsAsString(WorldTags)}");
+            Tag.WriteTags(this.WorldStream, WorldTags);
             this.WorldStream.Close();
+            this.ChunkStream.Close();
             this.EntityHandler.Dispose();
         }
     }

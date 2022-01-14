@@ -7,34 +7,29 @@ namespace Game.Graphics {
         where TVertexType : unmanaged 
     {
         public readonly int vaoID;
-        private BufferObject<TIndexType> IndexBuffer;
-        private BufferObject<TVertexType> VertexBuffer;
-
-        public VertexArray() {
+        public BufferObject<TIndexType> IndexBuffer { get; private set; }
+        public BufferObject<TVertexType> VertexBuffer { get; private set; }
+        public unsafe VertexArray(VertexLayout layout, int MAX_INDICES, int MAX_VERTICES, in TIndexType[] indices=null, TVertexType[] vertices=null) {
             this.vaoID = GL.GenVertexArray();
-        }
-        public VertexArray(VertexLayout layout, int MAX_INDICES, int MAX_VERTICES) {
-            this.IndexBuffer = new BufferObject<TIndexType>(MAX_INDICES, BufferTarget.ElementArrayBuffer);
-            this.VertexBuffer = new BufferObject<TVertexType>(MAX_VERTICES, BufferTarget.ArrayBuffer);
+            GL.BindVertexArray(this.vaoID);
+
+            this.VertexBuffer = new BufferObject<TVertexType>(sizeof(TVertexType) * MAX_VERTICES, BufferTarget.ArrayBuffer, data:vertices);
+            this.IndexBuffer = new BufferObject<TIndexType>(sizeof(TIndexType) * MAX_INDICES, BufferTarget.ElementArrayBuffer, data:indices);
+            this.InitVertexAttribs(layout);
         }
         public void Bind() {
             GL.BindVertexArray(this.vaoID);
-        }
-        public void SetIndexBuffer(BufferObject<TIndexType> buffer) {
-            this.IndexBuffer = buffer;
             this.IndexBuffer.Bind();
+            this.VertexBuffer.Bind();
         }
-        public void AddVertexBuffer(BufferObject<TVertexType> buffer, VertexLayout layout) {
+        public void InitVertexAttribs(VertexLayout layout) {
             this.Bind();
-            buffer.Bind();
-
+            
             foreach (VertexElement element in layout.Elements) {
                 GL.EnableVertexAttribArray(element.Index);
                 GL.VertexAttribPointer(element.Index, element.Components, element.Type, element.Normalized, layout.Stride, element.Offset);
                 GLHelper.CheckGLError("SetAttribPointer");
             }
-
-            this.VertexBuffer = buffer;
         }
         public void Dispose() {
             GL.DeleteVertexArray(this.vaoID);

@@ -44,7 +44,8 @@ namespace Game.World {
 
             this.WorldSpriteSheet = new SpriteSheet(GameHandler.Renderer.GetTexture("spritesheet"), 3, 1);
             this.EntityHandler.SpawnPlayer(0, 0, Application.Keyboard, Application.Mouse);
-            this.IsCreated = File.Exists(fileName) && File.Exists("chunks.bin");
+            // this.IsCreated = File.Exists(fileName) && File.Exists("chunks.bin");
+            this.IsCreated = false;
             if (this.IsCreated) {
                 this.WorldStream = IOUtils.OpenReadStream(fileName);
                 this.ChunkStream = IOUtils.OpenReadStream("chunks.bin");

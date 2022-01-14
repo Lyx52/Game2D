@@ -33,6 +33,7 @@ namespace Game.World {
         }
         public static TagType PeekNextTag(FileStream stream) {
             TagType type = ReadTagType(stream);
+            GameHandler.Logger.Debug($"StreamLength: {stream.Length}");
             stream.Position--;
             return type;
         }

@@ -16,7 +16,7 @@ namespace Game.Graphics {
                 GL.NamedBufferData(this.bufferID, size, IntPtr.Zero, BufferUsageHint.DynamicDraw);
                 GL.BindBufferBase(BufferRangeTarget.UniformBuffer, uniform_binding, this.bufferID);
             } else {
-                GL.BufferData(this.Type, this.Size, data, data == null ? BufferUsageHint.DynamicDraw : BufferUsageHint.StaticDraw);
+                GL.BufferData(this.Type, this.Size, data, data == null ? BufferUsageHint.StreamDraw : BufferUsageHint.StaticDraw);
             }
         }
         public void SetNamedData(IntPtr data, int size, int offset=0) {

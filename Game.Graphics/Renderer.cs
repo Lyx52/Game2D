@@ -161,7 +161,6 @@ namespace Game.Graphics {
         private BufferObject<float> VertexBuffer;
         private BufferObject<uint> IndexBuffer;
         private BufferObject<float> CameraBuffer;
-        public Vector2 DrawSize { get; set; }
         public static Vector2[] DefaultUVCoords;
         
         public OrthoCamera RenderCamera;
@@ -173,7 +172,6 @@ namespace Game.Graphics {
                 new Vector2(0.0f, 0.0f),
                 new Vector2(0.0f, 1.0f)
             };
-            this.DrawSize = new Vector2(width, height);
             this.RendererState = new GLState();
             this.RendererState.SetClearColor(0.0f, 0.0f, 1.0f, 1.0f);
             this.RendererState.AlphaBlend.Enable();
@@ -218,7 +216,7 @@ namespace Game.Graphics {
                 this.CameraBuffer = new BufferObject<float>(sizeof(Matrix4), BufferTarget.UniformBuffer, uniform_binding: 1);
             }
             // Init renderer camera camera draw size is window width divided by aspect ratio
-            this.RenderCamera = new OrthoCamera(this.DrawSize);
+            this.RenderCamera = new OrthoCamera(-(width / 2), (width / 2), -(height / 2), (height / 2));
 
             // Collect garbage, for some reason garbage collector collects our buffers
             GC.Collect();
@@ -251,12 +249,16 @@ namespace Game.Graphics {
             this.Storage.Stats.CurrentQuadCount++;
         }
         public void StartScene(in Vector2 cameraPosition) {
-            this.Storage.Stats.TotalFlushCount = 0;
+            GL.Clear(ClearBufferMask.ColorBufferBit);
             GL.Scissor(0, 0, GameHandler.WindowSize.X, GameHandler.WindowSize.Y);
+
+            this.Storage.Stats.TotalFlushCount = 0;
+            
             unsafe {
                 this.RenderCamera.Recalculate(cameraPosition);
                 this.CameraBuffer.SetData(this.RenderCamera.ViewProjection, sizeof(Matrix4));
             }
+            
             this.StartBatch();
         }
         public void EndScene() {
@@ -288,7 +290,6 @@ namespace Game.Graphics {
         }
         public void OnResize(ResizeEventArgs args) {
             GameHandler.WindowSize = args.Size;
-            this.DrawSize = Vector2i.Divide(args.Size, GameHandler.AspectRatio);
             GL.Viewport(0, 0, args.Size.X, args.Size.Y);   
         }
         public void DrawIndexed(PrimitiveType type) {

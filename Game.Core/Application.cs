@@ -15,8 +15,9 @@ namespace Game.Core {
         public static KeyboardHandler Keyboard { get; private set; }
         public static MouseHandler Mouse { get; private set; }
         public Renderer Renderer { get; }
-        public GameWorld World { get; protected set; }
+        public World.World World { get; protected set; }
         public Application(string title, int width, int height) : base(GameWindowSettings.Default, NativeWindowSettings.Default) {
+
             this.Size = new Vector2i(width, height);
             this.Title = title;
             this.UpdateFrequency = 30;
@@ -34,7 +35,7 @@ namespace Game.Core {
             this.MouseMove += Mouse.OnMouseMove;
 
             // Create renderer
-            this.Renderer = new Renderer(GameHandler.MAX_BUFFER_MEMORY, Vector2i.Divide(GameHandler.WindowSize, GameHandler.AspectRatio));
+            this.Renderer = new Renderer(GameHandler.MAX_BUFFER_MEMORY, GameHandler.WindowSize.X, GameHandler.WindowSize.Y);
             this.Resize += this.Renderer.OnResize;
 
             Renderer.LoadTexture("grass", "./res/textures/grass.png");
@@ -47,14 +48,14 @@ namespace Game.Core {
         }
         public void LoadWorld() {
             // Init world
-            this.World = new GameWorld(0);
+            this.World = new World.World(0, "./saves/world.bin");
         }
         protected override void OnRenderFrame(FrameEventArgs args)
-        {
-            GL.Clear(ClearBufferMask.ColorBufferBit);
+        {   
             Renderer.StartScene(this.World.GetPlayer().KinematicBody.Position);
             this.World.Render(this.Renderer);
             Renderer.EndScene();
+            
             base.OnRenderFrame(args);
             Context.SwapBuffers();
         }

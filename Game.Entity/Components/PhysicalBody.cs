@@ -7,7 +7,7 @@ namespace Game.Entity {
         public float Rotation { get; set; }
 
         public PhysicalBody(float x, float y) {
-            this.Size = new Vector2(16F, 16F);
+            this.Size = new Vector2(8F, 8F);
             this.Position = new Vector2(x, y);
             this.Rotation = 0.0f;
         }

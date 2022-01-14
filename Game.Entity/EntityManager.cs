@@ -1,9 +1,7 @@
-using OpenTK.Mathematics;
 using System.Collections.Generic;
 using System;
 
 using Game.Graphics;
-using Game.Utils;
 using Game.Input;
 
 namespace Game.Entity {

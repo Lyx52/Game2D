@@ -76,10 +76,6 @@ namespace Game.Graphics {
     public unsafe struct RenderStorage : IDisposable {
         public Texture[] TextureUnits { get; set; }
         public int TextureUnitIndex { get; set; }
-        private Vertex[] VertexArray { get; set; }
-        public GCHandle VertexArrayHandle { get; private set; }
-        public int VertexCount { get; set; }
-        public int IndicesCount { get; set; }
         public readonly int MAX_TEXTURE_UNITS { get; }
         public readonly int MAX_VERTICES { get; }
         public readonly int MAX_QUADS { get; }
@@ -92,8 +88,6 @@ namespace Game.Graphics {
         public RenderStats Stats;
         public RenderStorage(int bufferSize) {
             this.TextureUnitIndex = 0;
-            this.VertexCount = 0;
-            this.IndicesCount = 0;
             this.Stats = new RenderStats();
             this.MAX_TEXTURE_UNITS = 32;
             this.MAX_QUADS = (int)((bufferSize / sizeof(Vertex)) / 4);
@@ -115,11 +109,6 @@ namespace Game.Graphics {
             };
 
             this.DefaultTextureUV = Renderer.DefaultUVCoords;
-
-            // Create quad vertex array pin it to get its pointer
-            this.VertexArray = new Vertex[MAX_VERTICES];
-            this.VertexArrayHandle = GCHandle.Alloc(this.VertexArray, GCHandleType.Pinned);
-
             this.DispatchedQuads = new List<DrawQuad2D>();
             this.TextureUnits = new Texture[MAX_TEXTURE_UNITS];
             
@@ -135,32 +124,25 @@ namespace Game.Graphics {
         }
         public void Reset() {
             this.Stats.Reset();
-            this.VertexCount = 0;
-            this.IndicesCount = 0;
             this.TextureUnitIndex = 0;
         }
         public bool IsOverflow() {
-            return (this.VertexCount + 4) >= this.MAX_VERTICES || (this.IndicesCount + 6) >= this.MAX_INDICES || (this.TextureUnitIndex + 1) >= this.MAX_TEXTURE_UNITS;
+            return (this.TextureUnitIndex + 1) >= this.MAX_TEXTURE_UNITS;
         }
         public void Dispose() {
             GameHandler.Logger.Warn("Disposing render storage! Is this intentional?");
-            this.VertexArrayHandle.Free();
             foreach (Texture tex in this.Textures.Values) {
                 tex.Dispose();
             }
-        }
-        public Span<Vertex> Vertices {
-            get { return this.VertexArray.AsSpan(); }
         }
     }
     public class Renderer {
         private GLState RendererState;
         private RenderStorage Storage;
         private ShaderProgram TextureShader;
-        private VertexArray<uint, Vertex> VertexArray;
+        private VertexArray<uint, Vertex> QuadVertexArray;
         private BufferObject<float> CameraBuffer;
         public static Vector2[] DefaultUVCoords;
-        
         public OrthoCamera RenderCamera;
         public Renderer(int bufferSize, Vector2i drawSize) : this(bufferSize, drawSize.X, drawSize.Y) {}
         public Renderer(int bufferSize, int width, int height) {
@@ -200,10 +182,10 @@ namespace Game.Graphics {
             }
 
             // Setup vertex buffer/array
-            this.VertexArray = new VertexArray<uint, Vertex>(VertexLayout, this.Storage.MAX_INDICES, this.Storage.MAX_VERTICES, indices:quadIndices);
+            this.QuadVertexArray = new VertexArray<uint, Vertex>(VertexLayout, this.Storage.MAX_INDICES, this.Storage.MAX_VERTICES, indices:quadIndices);
 
             unsafe {
-                this.CameraBuffer = new BufferObject<float>(sizeof(Matrix4), BufferTarget.UniformBuffer, uniform_binding: 1);
+                this.CameraBuffer = new BufferObject<float>(4 * 4, BufferTarget.UniformBuffer, uniform_binding: 1);
             }
 
             // Init renderer camera camera draw size is window width divided by aspect ratio
@@ -224,7 +206,7 @@ namespace Game.Graphics {
             }
         }
         public void DrawQuad(DrawQuad2D quad) {
-            if (this.Storage.IsOverflow()) {
+            if (this.QuadVertexArray.IsOverflow() || this.Storage.IsOverflow()) {
                 this.NextBatch();
             }
             int textureIndex = this.AddUniqueTexture(quad.Texture);
@@ -232,11 +214,11 @@ namespace Game.Graphics {
             for (int i = 0; i < 4; i++) {
                 // This actually only check if its a center mode, if its any other mode it will always be corner
                 Vector4 vertexPosition = this.DefaultQuad[i] * transform;
-
-                this.Storage.Vertices[this.Storage.VertexCount++] = new Vertex(vertexPosition.Xy, quad.Color, quad.TexCoords[i], textureIndex);
+                this.QuadVertexArray.AppendVertex(new Vertex(vertexPosition.Xy, quad.Color, quad.TexCoords[i], textureIndex));
                 this.Storage.Stats.CurrentVertexCount++;
             }
-            this.Storage.IndicesCount += 6;
+
+            this.QuadVertexArray.IndicesCount += 6;
             this.Storage.Stats.CurrentQuadCount++;
         }
         public void StartScene(in Vector2 cameraPosition) {
@@ -259,34 +241,36 @@ namespace Game.Graphics {
         }
         public void StartBatch() {
             this.Storage.Reset();
+            this.QuadVertexArray.Reset();
         }
         public void NextBatch() {
             this.Flush();
             this.StartBatch();
         }
-        public unsafe void Flush() {
-            if (this.Storage.VertexCount > 0) {
+        public void Flush() {
+            if (this.QuadVertexArray.VertexCount > 0) {
                 this.Storage.Stats.TotalFlushCount++;
                 
                 // Upload vertex data
-                this.VertexArray.Bind();
+                this.QuadVertexArray.Bind();
+                this.QuadVertexArray.Flush();
+
                 this.TextureShader.Bind();
-                this.VertexArray.VertexBuffer.SetSubData(this.Storage.VertexArrayHandle.AddrOfPinnedObject(), sizeof(Vertex) * this.Storage.VertexCount);
-                
+
                 // Bind textures
                 this.BindTextureUnits();
-                this.DrawIndexed(PrimitiveType.Triangles);
+                this.DrawIndexed(PrimitiveType.Triangles, this.QuadVertexArray.IndicesCount);
             }
         }
         public void OnResize(ResizeEventArgs args) {
             GameHandler.WindowSize = args.Size;
             GL.Viewport(0, 0, args.Size.X, args.Size.Y);   
         }
-        public void DrawIndexed(PrimitiveType type) {
-            GL.DrawElements(type, this.Storage.IndicesCount, DrawElementsType.UnsignedInt, 0);
+        public void DrawIndexed(PrimitiveType type, int indices) {
+            GL.DrawElements(type, indices, DrawElementsType.UnsignedInt, 0);
         }
-        public void DrawPrimative(PrimitiveType type) {
-            GL.DrawArrays(type, 0, this.Storage.VertexCount);
+        public void DrawPrimative(PrimitiveType type, int vertices) {
+            GL.DrawArrays(type, 0, vertices);
         }
         private int AddUniqueTexture(Texture texture) {
             if (ArrayUtils.IndexOf<Texture>(this.Storage.TextureUnits, texture) == -1) {

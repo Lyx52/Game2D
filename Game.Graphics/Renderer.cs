@@ -56,6 +56,15 @@ namespace Game.Graphics {
             this.Position = position;
         }
     }
+    [StructLayout(LayoutKind.Explicit)]
+    public struct SimpleVertex {
+        [FieldOffset(0)] public Vector2 Position;
+        [FieldOffset(8)] public Vector4 Color;
+        public SimpleVertex(in Vector2 position, in Vector4 color) {
+            this.Color = color;
+            this.Position = position;
+        }
+    }
     public struct RenderStats {
         public int TotalFlushCount { get; set; }
         public int CurrentVertexCount { get; set; }
@@ -82,7 +91,6 @@ namespace Game.Graphics {
         public readonly int MAX_INDICES { get; }
         public readonly Vector4[] CenteredQuad { get; }
         public readonly Vector4[] CornerQuad { get; }
-        public readonly Vector2[] DefaultTextureUV { get; }
         public List<DrawQuad2D> DispatchedQuads { get; set; }
         public SortedList<string, Texture> Textures;
         public RenderStats Stats;
@@ -107,8 +115,6 @@ namespace Game.Graphics {
                 new Vector4(0.0f, 0.0f, 0.0f, 1.0f),
                 new Vector4(0.0f, 1.0f, 0.0f, 1.0f)
             };
-
-            this.DefaultTextureUV = Renderer.DefaultUVCoords;
             this.DispatchedQuads = new List<DrawQuad2D>();
             this.TextureUnits = new Texture[MAX_TEXTURE_UNITS];
             
@@ -140,7 +146,9 @@ namespace Game.Graphics {
         private GLState RendererState;
         private RenderStorage Storage;
         private ShaderProgram TextureShader;
+        private ShaderProgram SimpleShader;
         private VertexArray<uint, Vertex> QuadVertexArray;
+        private VertexArray<uint, SimpleVertex> TestVertexArray;
         private BufferObject<float> CameraBuffer;
         public static Vector2[] DefaultUVCoords;
         public OrthoCamera RenderCamera;
@@ -156,6 +164,7 @@ namespace Game.Graphics {
             this.RendererState.SetClearColor(0.0f, 0.0f, 1.0f, 1.0f);
             this.RendererState.AlphaBlend.Enable();
             this.RendererState.ScissorTest.Enable();
+            this.SimpleShader = new ShaderProgram("./res/shaders/SimpleShader.vert", "./res/shaders/SimpleShader.frag");
 
             this.TextureShader = new ShaderProgram("./res/shaders/TextureShader.vert", "./res/shaders/TextureShader.frag");
             this.TextureShader.Bind();
@@ -183,6 +192,17 @@ namespace Game.Graphics {
 
             // Setup vertex buffer/array
             this.QuadVertexArray = new VertexArray<uint, Vertex>(VertexLayout, this.Storage.MAX_INDICES, this.Storage.MAX_VERTICES, indices:quadIndices);
+            this.TestVertexArray = new VertexArray<uint, SimpleVertex>(new VertexLayout(new List<VertexElement>() {
+                new VertexElement("position", ElementType.Vector2f, 0),
+                new VertexElement("color", ElementType.Vector4f, 1),    
+            }), 6, 4, new uint[6] {
+                0, 1, 3, 1, 2, 3
+            }, new SimpleVertex[4] {
+                new SimpleVertex(new Vector2( 0.5f,  0.5f), Vector4.One),
+                new SimpleVertex(new Vector2( 0.5f, -0.5f), Vector4.One),
+                new SimpleVertex(new Vector2(-0.5f, -0.5f), Vector4.One),
+                new SimpleVertex(new Vector2(-0.5f,  0.5f), Vector4.One)
+            });
 
             unsafe {
                 this.CameraBuffer = new BufferObject<float>(4 * 4, BufferTarget.UniformBuffer, uniform_binding: 1);
@@ -233,6 +253,9 @@ namespace Game.Graphics {
             }
             
             this.StartBatch();
+            this.TestVertexArray.Bind();
+            this.SimpleShader.Bind();
+            this.DrawIndexed(PrimitiveType.Triangles, 6);
         }
         public void EndScene() {
             this.GenerateQuadGeometry();

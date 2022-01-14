@@ -43,6 +43,9 @@ namespace Game.Graphics {
         public void AppendVertex(TVertexType vertex) {
             this.VertexBuffer.AppendElement(vertex);
         }
+        public void AppendIndex(TIndexType index) {
+            this.IndexBuffer.AppendElement(index);
+        }
         public void InitVertexAttribs(VertexLayout layout) {
             this.Bind();
             

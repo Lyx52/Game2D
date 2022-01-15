@@ -250,8 +250,9 @@ namespace Game.Graphics {
             this.GenerateQuadGeometry();
             this.Flush();
             GameHandler.Profiler.StartSection("TextRendering");
-            this.TextRenderer.RenderText("Test", new Vector2(20f, 20f), 2.0F, new Vector3(0.5F, 0.8F, 0.2F));
-            this.TextRenderer.RenderText("Test2", new Vector2(100f, 40f), 2.0F, new Vector3(0.5F, 0.8F, 0.2F), fontSize:24);
+            this.TextRenderer.DrawText("Test", new Vector2(20f, 20f), 0.75F, new Vector3(0.5F, 0.8F, 0.2F));
+            this.TextRenderer.DrawText("Test2", new Vector2(100f, 40f), 2.0F, new Vector3(0.5F, 0.8F, 0.2F));
+            this.TextRenderer.Render();
             GameHandler.Profiler.EndSection("TextRendering");
             //this.TextRenderer.RenderBuffers();
             this.Storage.DispatchedQuads.Clear();

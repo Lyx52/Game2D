@@ -18,7 +18,6 @@ namespace Game.Graphics {
             this.Advance = adv;
         }
     }
-
     public class TextHandler : IDisposable {
         private static FreeTypeSharp.FreeTypeLibrary FreeTypeLib;
         public static FreeTypeFaceFacade CurrentFace;
@@ -26,6 +25,7 @@ namespace Game.Graphics {
         private ShaderProgram TextShader;
         private VertexArray<uint, Vector4> TextVertexArray;
         private static uint CurrentFontSize = 24;
+        private List<(String Text, Vector2 Pos, float Scale, Vector3 Color)> DispatchedText;
         public unsafe TextHandler(int MAX_CHARS=256) {
             CharacterMap = new Dictionary<char, Character>();
             
@@ -35,6 +35,7 @@ namespace Game.Graphics {
             FT_Library_Version(FreeTypeLib.Native, out var major, out var minor, out var patch);
             GameHandler.Logger.Debug($"FreeType version: {major}.{minor}.{patch}");
 
+            this.DispatchedText = new List<(String Text, Vector2 Pos, float Scale, Vector3 Color)>();
             // Init GL objects
             this.TextShader = new ShaderProgram("./res/shaders/TextShader.vert", "./res/shaders/TextShader.frag");
             
@@ -110,11 +111,27 @@ namespace Game.Graphics {
                 }
             }
         }
-        public void RenderText(string text, Vector2 position, float scale, Vector3 color, int fontSize=48) {
+        public void DrawText(string text, Vector2 position, float scale) {
+            this.DrawText(text, position, scale, Vector3.One);
+        }
+        public void DrawText(string text, Vector2 position, float scale, Vector3 color) {
+            this.DispatchedText.Add((Text: text, Pos: position, Scale: scale, Color: color));
+        }
+        public void Render() {
+            foreach(var text in this.DispatchedText) {
+                this.RenderText(text.Text, text.Pos, text.Scale, text.Color);
+            }
+            this.DispatchedText.Clear();
+        }
+        private void RenderText(string text, Vector2 position, float scale, Vector3 color, int fontSize=48) {
             // We cannot draw text if we dont have any glyph sizes
             if (CharacterMap.Count <= 0)
                 return;
-            SetFontSize((uint)fontSize);
+            
+            // NOTE: Try not to change this too much because it disposes old chars and replaces them with new ones
+            if (CurrentFontSize != fontSize)
+                SetFontSize((uint)fontSize);
+            
             this.TextShader.Bind();
             this.TextShader.Set3f(color, "textColor");
 

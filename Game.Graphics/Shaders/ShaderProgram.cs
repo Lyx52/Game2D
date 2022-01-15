@@ -54,9 +54,9 @@ namespace Game.Graphics {
                 
                 if (new_location < 0) {
                     GameHandler.Logger.Warn($"Shader uniform \"{varName}\" location could not be found!");
+                } else {
+                    this.uniformLocations.Add(varName, new_location);
                 }
-
-                this.uniformLocations.Add(varName, new_location);
                 return new_location;
             }
         }
@@ -64,13 +64,19 @@ namespace Game.Graphics {
             GL.UseProgram(this.programID);
         }
         public void Set4f(Vector4 value, string varName) {
-            GL.Uniform4(this.GetUniformLocation(varName), value);
+            GL.ProgramUniform4(this.programID, this.GetUniformLocation(varName), ref value);
         }
-        public void Set1f(float value, string varName) {
-            GL.Uniform1(this.GetUniformLocation(varName), value);
+        public void Set3f(Vector3 value, string varName) {
+            GL.ProgramUniform3(this.programID, this.GetUniformLocation(varName), ref value);
+        }
+        public void Set2f(Vector2 value, string varName) {
+            GL.ProgramUniform2(this.programID, this.GetUniformLocation(varName), ref value);
+        }
+        public void Set1f(ref float value, string varName) {
+            GL.ProgramUniform1(this.programID, this.GetUniformLocation(varName), value);
         }
         public void SetMat4(Matrix4 matrix, string varName) {
-            GL.UniformMatrix4(this.GetUniformLocation(varName), false, ref matrix);
+            GL.ProgramUniformMatrix4(this.programID, this.GetUniformLocation(varName), false, ref matrix);
         }
         public void SetSampler2D(int textureUnit, string varName) {
             GL.Uniform1(this.GetUniformLocation(varName), textureUnit);

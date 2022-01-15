@@ -73,6 +73,39 @@ namespace Game.Utils {
 
             return output;
         }
+        public static sbyte ReadSByte(FileStream stream) {
+            return (sbyte)stream.ReadByte();
+        }
+        public static int ReadInt32(FileStream stream) {
+            byte[] data = new byte[4];
+            stream.Read(data, 0, 4);
+            return BitConverter.ToInt32(data);
+        }
+        public static uint ReadUInt32(FileStream stream) {
+            byte[] data = new byte[4];
+            stream.Read(data, 0, 4);
+            return BitConverter.ToUInt32(data);
+        }
+        public static short ReadShort(FileStream stream) {
+            byte[] data = new byte[2];
+            stream.Read(data, 0, 2);
+            return BitConverter.ToInt16(data);
+        }
+        public static ushort ReadUShort(FileStream stream) {
+            byte[] data = new byte[2];
+            stream.Read(data, 0, 2);
+            return BitConverter.ToUInt16(data);
+        }
+        public static float ReadFloat(FileStream stream) {
+            byte[] data = new byte[4];
+            stream.Read(data, 0, 4);
+            return BitConverter.ToSingle(data);
+        }
+        public static double ReadDouble(FileStream stream) {
+            byte[] data = new byte[8];
+            stream.Read(data, 0, 8);
+            return BitConverter.ToDouble(data);
+        }
     }
     public static class StringUtils {
         

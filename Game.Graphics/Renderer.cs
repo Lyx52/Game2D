@@ -146,12 +146,11 @@ namespace Game.Graphics {
         private GLState RendererState;
         private RenderStorage Storage;
         private ShaderProgram TextureShader;
-        private ShaderProgram SimpleShader;
         private VertexArray<uint, Vertex> QuadVertexArray;
-        private VertexArray<uint, SimpleVertex> TestVertexArray;
         private BufferObject<float> CameraBuffer;
         public static Vector2[] DefaultUVCoords;
         public OrthoCamera RenderCamera;
+        public TextHandler TextRenderer;
         public Renderer(int bufferSize, Vector2i drawSize) : this(bufferSize, drawSize.X, drawSize.Y) {}
         public Renderer(int bufferSize, int width, int height) {
             DefaultUVCoords = new Vector2[4] {
@@ -164,8 +163,6 @@ namespace Game.Graphics {
             this.RendererState.SetClearColor(0.0f, 0.0f, 1.0f, 1.0f);
             this.RendererState.AlphaBlend.Enable();
             this.RendererState.ScissorTest.Enable();
-            this.SimpleShader = new ShaderProgram("./res/shaders/SimpleShader.vert", "./res/shaders/SimpleShader.frag");
-
             this.TextureShader = new ShaderProgram("./res/shaders/TextureShader.vert", "./res/shaders/TextureShader.frag");
             this.TextureShader.Bind();
             this.Storage = new RenderStorage(bufferSize);
@@ -176,6 +173,7 @@ namespace Game.Graphics {
                 new VertexElement("uvCoord", ElementType.Vector2f, 2),
                 new VertexElement("texIndex", ElementType.Float, 3)
             });
+
             // Setup buffer of indices
             uint[] quadIndices = new uint[this.Storage.MAX_INDICES];
             uint offset = 0;
@@ -192,18 +190,9 @@ namespace Game.Graphics {
 
             // Setup vertex buffer/array
             this.QuadVertexArray = new VertexArray<uint, Vertex>(VertexLayout, this.Storage.MAX_INDICES, this.Storage.MAX_VERTICES, indices:quadIndices);
-            this.TestVertexArray = new VertexArray<uint, SimpleVertex>(new VertexLayout(new List<VertexElement>() {
-                new VertexElement("position", ElementType.Vector2f, 0),
-                new VertexElement("color", ElementType.Vector4f, 1),    
-            }), 6, 4, new uint[6] {
-                0, 1, 3, 1, 2, 3
-            }, new SimpleVertex[4] {
-                new SimpleVertex(new Vector2( 0.5f,  0.5f), Vector4.One),
-                new SimpleVertex(new Vector2( 0.5f, -0.5f), Vector4.One),
-                new SimpleVertex(new Vector2(-0.5f, -0.5f), Vector4.One),
-                new SimpleVertex(new Vector2(-0.5f,  0.5f), Vector4.One)
-            });
-
+            this.TextRenderer = new TextHandler();
+            TextHandler.ReadFont("./res/font/arial.ttf");
+            GameHandler.Logger.Debug($"CurrentFont: {TextHandler.CurrentFace.MarshalFamilyName()}");
             unsafe {
                 this.CameraBuffer = new BufferObject<float>(4 * 4, BufferTarget.UniformBuffer, uniform_binding: 1);
             }
@@ -253,13 +242,18 @@ namespace Game.Graphics {
             }
             
             this.StartBatch();
-            this.TestVertexArray.Bind();
-            this.SimpleShader.Bind();
-            this.DrawIndexed(PrimitiveType.Triangles, 6);
+            // this.TextVertexArray.Bind();
+            // this.TextShader.Bind();
+            // this.DrawIndexed(PrimitiveType.Triangles, 6);
         }
         public void EndScene() {
             this.GenerateQuadGeometry();
             this.Flush();
+            GameHandler.Profiler.StartSection("TextRendering");
+            this.TextRenderer.RenderText("Test", new Vector2(20f, 20f), 2.0F, new Vector3(0.5F, 0.8F, 0.2F));
+            this.TextRenderer.RenderText("Test2", new Vector2(100f, 40f), 2.0F, new Vector3(0.5F, 0.8F, 0.2F), fontSize:24);
+            GameHandler.Profiler.EndSection("TextRendering");
+            //this.TextRenderer.RenderBuffers();
             this.Storage.DispatchedQuads.Clear();
         }
         public void StartBatch() {
@@ -282,17 +276,17 @@ namespace Game.Graphics {
 
                 // Bind textures
                 this.BindTextureUnits();
-                this.DrawIndexed(PrimitiveType.Triangles, this.QuadVertexArray.IndicesCount);
+                DrawIndexed(PrimitiveType.Triangles, this.QuadVertexArray.IndicesCount);
             }
         }
         public void OnResize(ResizeEventArgs args) {
             GameHandler.WindowSize = args.Size;
             GL.Viewport(0, 0, args.Size.X, args.Size.Y);   
         }
-        public void DrawIndexed(PrimitiveType type, int indices) {
+        public static void DrawIndexed(PrimitiveType type, int indices) {
             GL.DrawElements(type, indices, DrawElementsType.UnsignedInt, 0);
         }
-        public void DrawPrimative(PrimitiveType type, int vertices) {
+        public static void DrawPrimative(PrimitiveType type, int vertices) {
             GL.DrawArrays(type, 0, vertices);
         }
         private int AddUniqueTexture(Texture texture) {
@@ -319,7 +313,9 @@ namespace Game.Graphics {
         }
         public void Dispose() {
             this.RenderCamera.Dispose();
+            this.TextRenderer.Dispose();
             this.Storage.Dispose();
+
         }
         public void AddTexture(string name, Texture tex) {
             if (!this.Storage.Textures.TryAdd(name, tex)) {

@@ -59,29 +59,12 @@ namespace Game.World {
             switch(type) {
                 case TagType.StringTag: 
                     return new StringTag(tagName, IOUtils.ReadString(stream));
-                case TagType.IntTag: {
-                    byte[] data = new byte[4];
-                    stream.Read(data, 0, 4);
-
-                    return new IntTag(tagName, BitConverter.ToInt32(data));
-                }
-                case TagType.FloatTag: {
-                    byte[] data = new byte[4];
-                    stream.Read(data, 0, 4);
-
-                    return new FloatTag(tagName, BitConverter.ToSingle(data));
-                }
-                case TagType.DoubleTag: {
-                    byte[] data = new byte[8];
-                    stream.Read(data, 0, 8);
-
-                    return new DoubleTag(tagName,  BitConverter.ToDouble(data));;
-                }
+                case TagType.IntTag:    return new IntTag(tagName, IOUtils.ReadInt32(stream));
+                case TagType.FloatTag:  return new FloatTag(tagName, IOUtils.ReadFloat(stream));
+                case TagType.DoubleTag: return new DoubleTag(tagName,  IOUtils.ReadDouble(stream));;
                 case TagType.CompoundTag: {
-                    byte[] data = new byte[4];
-                    stream.Read(data, 0, 4);
                     Dictionary<string, Tag> tags = new Dictionary<string, Tag>();
-                    for (int i = 0; i < BitConverter.ToInt32(data); i++) {
+                    for (int i = 0; i < IOUtils.ReadInt32(stream); i++) {
                         Tag tag = Tag.ReadTag(stream);
                         tags.Add(tag.Name, tag);
                     }
@@ -89,12 +72,9 @@ namespace Game.World {
                     return new CompoundTag(tagName, tags);
                 }
                 case TagType.ByteArrayTag: {
-                    byte[] lengthData = new byte[4];
-                    stream.Read(lengthData, 0, 4);
-                    int length = BitConverter.ToInt32(lengthData);
+                    int length = IOUtils.ReadInt32(stream);
                     byte[] data = new byte[length];
-                    stream.Read(data, 0, BitConverter.ToInt32(lengthData));
-
+                    stream.Read(data, 0, length);
                     return new ByteArrayTag(tagName, data);
                 }
                 case TagType.BaseTag:

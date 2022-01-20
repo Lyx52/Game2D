@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using OpenTK.Mathematics;
-using Game.Graphics;
-using Game.Utils;
 using System;
+
+using Game.Graphics;
+using Game.Input;
 
 namespace Game.Entity {
     public class EntityManager : IDisposable {
@@ -33,7 +33,7 @@ namespace Game.Entity {
         public void Render(Renderer renderer) {
             foreach (int entityIndex in this.drawableEntities) {
                 // Currently player entity visibility range is hardcoded
-                if (this.GetPlayer().InRange(this.entities[entityIndex], 5))
+                if (this.GetPlayer().InRange(this.entities[entityIndex], 150))
                     ((DrawableEntity)this.entities[entityIndex]).Draw(renderer);
             }
         }
@@ -46,6 +46,15 @@ namespace Game.Entity {
         public void Dispose() {
             foreach(Entity e in this.entities)
                 e.Dispose();
+        }
+        public Player SpawnPlayer(int x, int y, KeyboardHandler keyboard, MouseHandler mouse) {
+            Player player = new Player(x, y);
+
+            player.Controller.AttachKeyboardHandler(keyboard);
+            player.Controller.AttachMouseHandler(mouse);
+            this.AddEntity(player);
+
+            return player;
         }
     }
 }

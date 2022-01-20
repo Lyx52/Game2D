@@ -8,7 +8,7 @@ namespace Game.Graphics {
             this.Capability = capability;
             this.CurrentState = false;
         }
-        public void setState(bool state) {
+        public void SetState(bool state) {
             if (this.CurrentState != state) {
                 this.CurrentState = state;
                 if (state) {
@@ -20,7 +20,18 @@ namespace Game.Graphics {
             GLHelper.CheckGLError($"Set state {state} to {this.Capability}");
         }
     }
-
+    public class ScissorState {
+        private CapabilityState scissorTest;
+        public ScissorState() {
+            this.scissorTest = new CapabilityState(EnableCap.ScissorTest);
+        }
+        public void Enable() {
+            this.scissorTest.SetState(true);
+        }
+        public void Disable() {
+            this.scissorTest.SetState(false);    
+        }
+    }
     public class AlphaState {
         private CapabilityState alphaFunction;
         public BlendingFactor sourceFactor;
@@ -33,10 +44,10 @@ namespace Game.Graphics {
             GL.BlendFunc(this.sourceFactor, this.destinationFactor);
         }
         public void Enable() {
-            this.alphaFunction.setState(true);
+            this.alphaFunction.SetState(true);
         }
         public void Disable() {
-            this.alphaFunction.setState(false);
+            this.alphaFunction.SetState(false);
         }
         public void SetSourceFactor(BlendingFactor sfactor) {
             this.sourceFactor = sfactor;
@@ -49,7 +60,8 @@ namespace Game.Graphics {
     }
     public class GLState {
 
-        private AlphaState alphaState = new AlphaState();
+        public AlphaState AlphaBlend = new AlphaState();
+        public ScissorState ScissorTest = new ScissorState();
         private QuadMode quadMode = QuadMode.CENTER;
 
         public QuadMode QuadRenderMode {
@@ -59,12 +71,6 @@ namespace Game.Graphics {
             set {
                 this.quadMode = value;
             }
-        }
-        public void EnableAlpha() {
-            this.alphaState.Enable();
-        }
-        public void DisableAlpha() {
-            this.alphaState.Disable();
         }
         public void SetClearColor(float red, float green, float blue, float alpha) {
             GL.ClearColor(red, green, blue, alpha);

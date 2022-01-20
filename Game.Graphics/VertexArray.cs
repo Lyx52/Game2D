@@ -1,40 +1,59 @@
 using OpenTK.Graphics.OpenGL4;
-using System.Collections.Generic;
 using System;
 
 namespace Game.Graphics {
-    public class VertexArray : IDisposable {
+    public class VertexArray<TIndexType, TVertexType> : IDisposable 
+        where TIndexType : unmanaged 
+        where TVertexType : unmanaged 
+    {
         public readonly int vaoID;
-        private List<VertexBuffer> vertexBuffers;
-        private IndexBuffer indexBuffer;
-
-        public VertexArray() {
+        public BufferObject<TIndexType> IndexBuffer { get; private set; }
+        public BufferObject<TVertexType> VertexBuffer { get; private set; }
+        public int IndicesCount {
+            get { return this.IndexBuffer.CurrentElementCount; }
+            set { this.IndexBuffer.CurrentElementCount = value; }
+        }
+        public int VertexCount {
+            get { return this.VertexBuffer.CurrentElementCount; }
+            set { this.VertexBuffer.CurrentElementCount = value; }
+        }
+        public unsafe VertexArray(VertexLayout layout, int MAX_INDICES, int MAX_VERTICES, in TIndexType[] indices=null, TVertexType[] vertices=null) {
             this.vaoID = GL.GenVertexArray();
-            this.vertexBuffers = new List<VertexBuffer>();
+            GL.BindVertexArray(this.vaoID);
+
+            this.VertexBuffer = new BufferObject<TVertexType>(MAX_VERTICES, BufferTarget.ArrayBuffer, data:vertices);
+            this.IndexBuffer = new BufferObject<TIndexType>(MAX_INDICES, BufferTarget.ElementArrayBuffer, data:indices);
+            this.InitVertexAttribs(layout);
         }
         public void Bind() {
             GL.BindVertexArray(this.vaoID);
+            this.IndexBuffer.Bind();
+            this.VertexBuffer.Bind();
         }
-        public void Unbind() {
-            GL.BindVertexArray(0);
+        public void Flush() {
+            this.VertexBuffer.Flush();
         }
-        public void SetIndexBuffer(IndexBuffer buffer) {
-            this.indexBuffer = buffer;
-            this.indexBuffer.Bind();
+        public void Reset() {
+            this.IndicesCount = 0;
+            this.VertexCount = 0;
         }
-        public void AddVertexBuffer(VertexBuffer buffer) {
-            if (!buffer.Layout.IsValid()) {
-                GameHandler.Logger.Error("When adding a VertexBuffer it must have a valid layout!");
-            }
-
+        public bool IsOverflow() {
+            return this.VertexBuffer.IsOverflow(4) || this.IndexBuffer.IsOverflow(6);
+        }
+        public void AppendVertex(TVertexType vertex) {
+            this.VertexBuffer.AppendElement(vertex);
+        }
+        public void AppendIndex(TIndexType index) {
+            this.IndexBuffer.AppendElement(index);
+        }
+        public void InitVertexAttribs(VertexLayout layout) {
             this.Bind();
-            buffer.Bind();
-            foreach (BufferElement element in buffer.Layout.Elements) {
+            
+            foreach (VertexElement element in layout.Elements) {
                 GL.EnableVertexAttribArray(element.Index);
-                GL.VertexAttribPointer(element.Index, element.ComponentCount, element.AttribType, element.Normalized, buffer.Stride, element.Offset);
+                GL.VertexAttribPointer(element.Index, element.Components, element.Type, element.Normalized, layout.Stride, element.Offset);
                 GLHelper.CheckGLError("SetAttribPointer");
             }
-            this.vertexBuffers.Add(buffer);
         }
         public void Dispose() {
             GL.DeleteVertexArray(this.vaoID);

@@ -3,6 +3,8 @@ using System;
 using System.IO;
 #endif
 
+// TODO: Fix file logging, broken...
+
 namespace Game.Utils {
     public class Logger : IDisposable {
         public enum LogLevel {
@@ -15,7 +17,7 @@ namespace Game.Utils {
         private int _LoggingLevel = 0;
         
         #if FILE_LOGGING
-        private StreamWriter LogWriter = FileUtils.GetLogWriter();
+        private StreamWriter LogWriter = IOUtils.GetLogWriter();
         #endif
 
         public void Close() {

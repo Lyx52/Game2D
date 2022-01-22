@@ -20,6 +20,14 @@ namespace Game.Utils {
         public static string GetCWD() {
             return Directory.GetCurrentDirectory();
         }
+        public static FileStream OpenFileStream(string filePath) {
+            try {
+                return File.Open(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            } catch(IOException e) {
+                GameHandler.Logger.Critical($"File {filePath} could not be opened/created!\n{e}");
+                return default(FileStream);
+            }
+        }
         public static FileStream OpenWriteStream(string filePath) {
             try {
                 return File.Open(filePath, FileMode.Create);
@@ -72,6 +80,49 @@ namespace Game.Utils {
             } while (data != 0xFF); // Terminator not reached
 
             return output;
+        }
+        public static sbyte ReadSByte(FileStream stream) {
+            return (sbyte)stream.ReadByte();
+        }
+        public static int ReadInt32(FileStream stream) {
+            byte[] data = new byte[4];
+            stream.Read(data, 0, 4);
+            return BitConverter.ToInt32(data);
+        }
+        public static long ReadInt64(FileStream stream) {
+            byte[] data = new byte[8];
+            stream.Read(data, 0, 8);
+            return BitConverter.ToInt64(data);
+        }
+        public static ulong ReadUInt64(FileStream stream) {
+            byte[] data = new byte[8];
+            stream.Read(data, 0, 8);
+            return BitConverter.ToUInt64(data);
+        }
+        public static uint ReadUInt32(FileStream stream) {
+            byte[] data = new byte[4];
+            stream.Read(data, 0, 4);
+            return BitConverter.ToUInt32(data);
+        }
+        public static short ReadShort(FileStream stream) {
+            byte[] data = new byte[2];
+            stream.Read(data, 0, 2);
+            return BitConverter.ToInt16(data);
+        }
+        public static ushort ReadUShort(FileStream stream) {
+            byte[] data = new byte[2];
+            stream.Read(data, 0, 2);
+            return BitConverter.ToUInt16(data);
+        }
+        public static float ReadFloat(FileStream stream) {
+            byte[] data = new byte[4];
+            stream.Read(data, 0, 4);
+            return BitConverter.ToSingle(data);
+        }
+        public static double ReadDouble(FileStream stream) {
+            byte[] data = new byte[8];
+            stream.Read(data, 0, 8);
+            return BitConverter.ToDouble(data);
         }
     }
     public static class StringUtils {

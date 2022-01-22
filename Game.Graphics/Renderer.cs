@@ -150,7 +150,7 @@ namespace Game.Graphics {
         private BufferObject<float> CameraBuffer;
         public static Vector2[] DefaultUVCoords;
         public OrthoCamera RenderCamera;
-        public TextHandler TextRenderer;
+        private GUIHandler GUIRenderer;
         public Renderer(int bufferSize, Vector2i drawSize) : this(bufferSize, drawSize.X, drawSize.Y) {}
         public Renderer(int bufferSize, int width, int height) {
             DefaultUVCoords = new Vector2[4] {
@@ -190,9 +190,9 @@ namespace Game.Graphics {
 
             // Setup vertex buffer/array
             this.QuadVertexArray = new VertexArray<uint, Vertex>(VertexLayout, this.Storage.MAX_INDICES, this.Storage.MAX_VERTICES, indices:quadIndices);
-            this.TextRenderer = new TextHandler();
-            TextHandler.ReadFont("./res/font/arial.ttf");
-            GameHandler.Logger.Debug($"CurrentFont: {TextHandler.CurrentFace.MarshalFamilyName()}");
+            this.GUIRenderer = new GUIHandler();
+            GUIHandler.LoadFont("./res/font/arial.ttf");
+            GameHandler.Logger.Debug($"CurrentFont: {GUIHandler.CurrentFace.MarshalFamilyName()}");
             unsafe {
                 this.CameraBuffer = new BufferObject<float>(4 * 4, BufferTarget.UniformBuffer, uniform_binding: 1);
             }
@@ -202,6 +202,7 @@ namespace Game.Graphics {
 
             // Collect garbage, for some reason garbage collector collects our buffers
             GC.Collect();
+            GL.PixelStore(PixelStoreParameter.UnpackAlignment, 1);   
         }
         public void DispatchQuad(DrawQuad2D quad) {
             this.Storage.DispatchedQuads.Add(quad);
@@ -249,12 +250,7 @@ namespace Game.Graphics {
         public void EndScene() {
             this.GenerateQuadGeometry();
             this.Flush();
-            GameHandler.Profiler.StartSection("TextRendering");
-            this.TextRenderer.DrawText("Test", new Vector2(20f, 20f), 0.75F, new Vector3(0.5F, 0.8F, 0.2F));
-            this.TextRenderer.DrawText("Test2", new Vector2(100f, 40f), 2.0F, new Vector3(0.5F, 0.8F, 0.2F));
-            this.TextRenderer.Render();
-            GameHandler.Profiler.EndSection("TextRendering");
-            //this.TextRenderer.RenderBuffers();
+            this.GUIRenderer.Render();
             this.Storage.DispatchedQuads.Clear();
         }
         public void StartBatch() {
@@ -314,7 +310,7 @@ namespace Game.Graphics {
         }
         public void Dispose() {
             this.RenderCamera.Dispose();
-            this.TextRenderer.Dispose();
+            this.GUIRenderer.Dispose();
             this.Storage.Dispose();
 
         }
@@ -335,6 +331,9 @@ namespace Game.Graphics {
                     default: return this.Storage.CenteredQuad;
                 }
             }
+        }
+        public GUIHandler GUI {
+            get { return this.GUIRenderer; }
         }
         public Texture GetTexture(string name) {
             if (this.Storage.Textures.TryGetValue(name, out Texture tex)) {

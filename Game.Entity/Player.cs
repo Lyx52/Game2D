@@ -6,6 +6,7 @@ using System.Collections.Generic;
 
 namespace Game.Entity {
     public class Player : DrawableEntity {
+        private string PlayerName = "NoName";
         public Player(float x, float y) : base() {
             this.AttachComponent(new KinematicBody(x, y));
             this.AttachComponent(new EntityController(this));
@@ -13,7 +14,8 @@ namespace Game.Entity {
             this.Layer = RenderLayer.LAYER_2;
         }
         public override void Draw(Renderer renderer) {
-            renderer.DispatchQuad(this.GetRenderQuad(this.KinematicBody));         
+            renderer.DispatchQuad(this.GetRenderQuad(this.KinematicBody));
+            renderer.GUI.DrawText("Player", (GameHandler.WindowSize / 2) + new Vector2(-32F, 20F), 0.5F, new Vector3(0.75F, 0.0F, 5.0F));      
         }
         public EntityController Controller {
             get { return (EntityController)this.GetComponent("EntityController"); }
@@ -44,24 +46,27 @@ namespace Game.Entity {
             return base.ToString();
         }
         public CompoundTag GetPlayerTag() {
-            return new CompoundTag("player", new List<Tag>() {
-                new StringTag("PlayerName", "NoName"),
+            return new CompoundTag("Player", new List<Tag>() {
+                new StringTag("PlayerName", this.PlayerName),
                 new DoubleTag("Acceleration", this.KinematicBody.Acceleration),
                 new FloatTag("Rotation", this.KinematicBody.Rotation),
-                new CompoundTag("Position", new List<Tag>(){
-                    new FloatTag("X", this.KinematicBody.Position.X),
-                    new FloatTag("Y", this.KinematicBody.Position.Y)
-                })
+                new Vector2Tag("Position", this.KinematicBody.Position)
             });
         }
         public void LoadPlayerData(CompoundTag playerTag) {
-            GameHandler.Logger.Assert(playerTag.Name == "player", "Invalid compound tag provided!");
-            this.KinematicBody.Acceleration = playerTag.GetDoubleTag("Acceleration").Value;
-            this.KinematicBody.Rotation = playerTag.GetFloatTag("Rotation").Value;
+            GameHandler.Logger.Assert(playerTag.Name == "Player", "Invalid compound tag provided!");
             
-            CompoundTag position = playerTag.GetCompoundTag("Position");
-            this.KinematicBody.Position = new Vector2(position.GetFloatTag("X").Value, position.GetFloatTag("Y").Value);
-            GameHandler.Logger.Debug($"Position {this.KinematicBody.Position}");
+            GameHandler.Logger.Assert(playerTag.Contains("Acceleration"), "Player tag doesnt contain Acceleration key!");
+            this.KinematicBody.Acceleration = playerTag.GetDoubleTag("Acceleration").Value;
+
+            GameHandler.Logger.Assert(playerTag.Contains("Rotation"), "Player tag doesnt contain Rotation key!");
+            this.KinematicBody.Rotation = playerTag.GetFloatTag("Rotation").Value;
+
+            GameHandler.Logger.Assert(playerTag.Contains("Position"), "Player tag doesnt contain Position key!");
+            this.KinematicBody.Position = playerTag.GetVector2Tag("Position").Value;
+
+            GameHandler.Logger.Assert(playerTag.Contains("PlayerName"), "Player tag doesnt contain PlayerName key!");
+            this.PlayerName = playerTag.GetStringTag("PlayerName").Value;
         }
         public override bool InRange(Entity target, float range)
         {

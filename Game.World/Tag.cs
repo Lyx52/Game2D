@@ -1,16 +1,23 @@
 using System.Collections.Generic;
 using System.IO;
 using System;
+using OpenTK.Mathematics;
 using Game.Utils;
+
 namespace Game.World {
  public enum TagType : byte {
         BaseTag,
         StringTag,
         IntTag,
+        UIntTag,
+        LongTag,
+        ULongTag,
         FloatTag,
         DoubleTag,
         ByteArrayTag,
         CompoundTag,
+        Vector2Tag,
+        Vector2iTag,
         EndTag
     }
     public abstract class Tag {
@@ -32,8 +39,11 @@ namespace Game.World {
             return (TagType)stream.ReadByte();
         }
         public static TagType PeekNextTag(FileStream stream) {
+            // Cannot read next tag since file is empty
+            if (stream.Length <= 0)
+                return TagType.EndTag;
+
             TagType type = ReadTagType(stream);
-            GameHandler.Logger.Debug($"StreamLength: {stream.Length}");
             stream.Position--;
             return type;
         }
@@ -60,11 +70,19 @@ namespace Game.World {
                 case TagType.StringTag: 
                     return new StringTag(tagName, IOUtils.ReadString(stream));
                 case TagType.IntTag:    return new IntTag(tagName, IOUtils.ReadInt32(stream));
+                case TagType.UIntTag:    return new UIntTag(tagName, IOUtils.ReadUInt32(stream));
+                case TagType.LongTag:    return new LongTag(tagName, IOUtils.ReadInt64(stream));
+                case TagType.ULongTag:    return new ULongTag(tagName, IOUtils.ReadUInt64(stream));
                 case TagType.FloatTag:  return new FloatTag(tagName, IOUtils.ReadFloat(stream));
                 case TagType.DoubleTag: return new DoubleTag(tagName,  IOUtils.ReadDouble(stream));;
+
+                // Vector2/Vector2i first float read is X second is Y
+                case TagType.Vector2Tag: return new Vector2Tag(tagName, new Vector2(IOUtils.ReadFloat(stream), IOUtils.ReadFloat(stream)));
+                case TagType.Vector2iTag: return new Vector2iTag(tagName, new Vector2i(IOUtils.ReadInt32(stream), IOUtils.ReadInt32(stream)));             
                 case TagType.CompoundTag: {
                     Dictionary<string, Tag> tags = new Dictionary<string, Tag>();
-                    for (int i = 0; i < IOUtils.ReadInt32(stream); i++) {
+                    int tagCount = IOUtils.ReadInt32(stream);
+                    for (int i = 0; i < tagCount; i++) {
                         Tag tag = Tag.ReadTag(stream);
                         tags.Add(tag.Name, tag);
                     }
@@ -103,6 +121,72 @@ namespace Game.World {
         public int Value;
         public IntTag(string name) : this(name, 0) {}
         public IntTag(string name, int value) : base(name, TagType.IntTag) {
+            this.Value = value;
+        }
+        public override void WriteTag(FileStream stream)
+        {
+            // Write tag identificator
+            stream.WriteByte((byte)this.Type);
+            
+            // Write tag name
+            stream.Write(StringUtils.StringAsBytes(this.Name));
+
+            // Write data
+            stream.Write(BitConverter.GetBytes(this.Value));
+        }
+        public override string ToString()
+        {
+            return $"{base.ToString()} - {this.Value}";
+        }
+    }
+    public class UIntTag : Tag {
+        public uint Value;
+        public UIntTag(string name) : this(name, 0) {}
+        public UIntTag(string name, uint value) : base(name, TagType.UIntTag) {
+            this.Value = value;
+        }
+        public override void WriteTag(FileStream stream)
+        {
+            // Write tag identificator
+            stream.WriteByte((byte)this.Type);
+            
+            // Write tag name
+            stream.Write(StringUtils.StringAsBytes(this.Name));
+
+            // Write data
+            stream.Write(BitConverter.GetBytes(this.Value));
+        }
+        public override string ToString()
+        {
+            return $"{base.ToString()} - {this.Value}";
+        }
+    }
+    public class LongTag : Tag {
+        public long Value;
+        public LongTag(string name) : this(name, 0L) {}
+        public LongTag(string name, long value) : base(name, TagType.LongTag) {
+            this.Value = value;
+        }
+        public override void WriteTag(FileStream stream)
+        {
+            // Write tag identificator
+            stream.WriteByte((byte)this.Type);
+            
+            // Write tag name
+            stream.Write(StringUtils.StringAsBytes(this.Name));
+
+            // Write data
+            stream.Write(BitConverter.GetBytes(this.Value));
+        }
+        public override string ToString()
+        {
+            return $"{base.ToString()} - {this.Value}";
+        }
+    }
+    public class ULongTag : Tag {
+        public ulong Value;
+        public ULongTag(string name) : this(name, 0L) {}
+        public ULongTag(string name, ulong value) : base(name, TagType.ULongTag) {
             this.Value = value;
         }
         public override void WriteTag(FileStream stream)
@@ -208,6 +292,52 @@ namespace Game.World {
             stream.Write(this.Value);
         }
     }
+    public class Vector2Tag : Tag {
+        public Vector2 Value;
+        public Vector2Tag(string name) : this(name, Vector2.Zero) {}
+        public Vector2Tag(string name, Vector2 value) : base(name, TagType.Vector2Tag) {
+            this.Value = value;
+        }
+        public override void WriteTag(FileStream stream)
+        {
+            // Write tag identificator
+            stream.WriteByte((byte)this.Type);
+            
+            // Write tag name
+            stream.Write(StringUtils.StringAsBytes(this.Name));
+
+            // Write data X, Y
+            stream.Write(BitConverter.GetBytes(this.Value.X));
+            stream.Write(BitConverter.GetBytes(this.Value.Y));
+        }
+        public override string ToString()
+        {
+            return $"{base.ToString()} - {this.Value}";
+        }
+    }
+    public class Vector2iTag : Tag {
+        public Vector2i Value;
+        public Vector2iTag(string name) : this(name, Vector2i.Zero) {}
+        public Vector2iTag(string name, Vector2i value) : base(name, TagType.Vector2iTag) {
+            this.Value = value;
+        }
+        public override void WriteTag(FileStream stream)
+        {
+            // Write tag identificator
+            stream.WriteByte((byte)this.Type);
+            
+            // Write tag name
+            stream.Write(StringUtils.StringAsBytes(this.Name));
+
+            // Write data X, Y
+            stream.Write(BitConverter.GetBytes(this.Value.X));
+            stream.Write(BitConverter.GetBytes(this.Value.Y));
+        }
+        public override string ToString()
+        {
+            return $"{base.ToString()} - {this.Value}";
+        }
+    }
     public class CompoundTag : Tag {
         public Dictionary<string, Tag> Tags { get; set; }
         public CompoundTag(string name) : this(name, new Dictionary<string, Tag>()) {}
@@ -218,6 +348,9 @@ namespace Game.World {
         }
         public CompoundTag(string name, Dictionary<string, Tag> tags) : base(name, TagType.CompoundTag) {
             this.Tags = tags;
+        }
+        public bool Contains(string key) {
+            return this.Tags.ContainsKey(key);
         }
         public void AddTag(Tag tag) {
             if (!this.Tags.TryAdd(tag.Name, tag)) {
@@ -241,6 +374,12 @@ namespace Game.World {
         }
         public ByteArrayTag GetByteArrayTag(string key) {
             return (ByteArrayTag)this.GetTag(key);
+        }
+        public Vector2Tag GetVector2Tag(string key) {
+            return (Vector2Tag)this.GetTag(key);
+        }
+        public Vector2iTag GetVector2iTag(string key) {
+            return (Vector2iTag)this.GetTag(key);
         }
         private Tag GetTag(string key) {
             if (this.Tags.TryGetValue(key, out Tag tag)) {

@@ -7,10 +7,10 @@ using System.Collections.Generic;
 
 namespace Game.Graphics {
     struct Character {
-        public int TexID;  // ID handle of the glyph texture
+        public int TexID;           // Texture ID
         public Vector2i Size;       // Size of glyph
         public Vector2i Bearing;    // Offset from baseline to left/top of glyph
-        public uint Advance;    // Offset to advance to next glyph
+        public uint Advance;        // Offset to advance to next glyph
         public Character(int texID, Vector2i size, Vector2i bearing, uint adv) {
             this.TexID = texID;
             this.Size = size;
@@ -18,7 +18,15 @@ namespace Game.Graphics {
             this.Advance = adv;
         }
     }
-    public class TextHandler : IDisposable {
+    public abstract class GUIElement {
+        public string Name;
+        public GUIElement(string name) {
+            this.Name = name;
+        }
+        public abstract void OnClick();
+        public abstract void Render(in GUIHandler handler);
+    }
+    public class GUIHandler : IDisposable {
         private static FreeTypeSharp.FreeTypeLibrary FreeTypeLib;
         public static FreeTypeFaceFacade CurrentFace;
         private static Dictionary<char, Character> CharacterMap;
@@ -26,7 +34,7 @@ namespace Game.Graphics {
         private VertexArray<uint, Vector4> TextVertexArray;
         private static uint CurrentFontSize = 24;
         private List<(String Text, Vector2 Pos, float Scale, Vector3 Color)> DispatchedText;
-        public unsafe TextHandler(int MAX_CHARS=256) {
+        public unsafe GUIHandler(int MAX_CHARS=256) {
             CharacterMap = new Dictionary<char, Character>();
             
             // Init FreeType
@@ -47,10 +55,12 @@ namespace Game.Graphics {
             this.TextVertexArray = new VertexArray<uint, Vector4>(new VertexLayout(
                 new List<VertexElement>() {
                     new VertexElement("vertex", ElementType.Vector4f, 0) 
-                }), 6, MAX_CHARS * 4
+                }), 6, MAX_CHARS * 4, indices: new uint[] {
+                    0, 1, 2, 0, 2, 3
+                }
             );
         }
-        public static void ReadFont(string filePath, uint size=48) {
+        public static void LoadFont(string filePath, uint size=48) {
             if (FT_New_Face(FreeTypeLib.Native, filePath, 0, out IntPtr face) != FreeTypeSharp.Native.FT_Error.FT_Err_Ok) {
                 GameHandler.Logger.Critical($"Error! Could not read font file {filePath}!");
             }
@@ -73,7 +83,6 @@ namespace Game.Graphics {
         private static void LoadChars() {
             if (CharacterMap.Count > 0)
                 DeleteCharacterMap();
-            GL.PixelStore(PixelStoreParameter.UnpackAlignment, 1);   
             for (uint i = 32; i < 128; i++) {
                 // Load char bitmap
                 FreeTypeSharp.Native.FT_Error code = FT_Load_Char(CurrentFace.Face, i, FT_LOAD_RENDER);
@@ -145,20 +154,19 @@ namespace Game.Graphics {
 
                     float w = ch.Size.X * scale;
                     float h = ch.Size.Y * scale;
+
                     // update VBO for each character
+                    this.TextVertexArray.AppendVertex(new Vector4( xpos,     ypos + h,   0.0f, 0.0f ));
+                    this.TextVertexArray.AppendVertex(new Vector4( xpos,     ypos,       0.0f, 1.0f ));
+                    this.TextVertexArray.AppendVertex(new Vector4( xpos + w, ypos,       1.0f, 1.0f ));
+                    this.TextVertexArray.AppendVertex(new Vector4( xpos + w, ypos + h,   1.0f, 0.0f ));
 
-                    Vector4[] vertices = new Vector4[6] {
-                        new Vector4( xpos,     ypos + h,   0.0f, 0.0f ),
-                        new Vector4( xpos,     ypos,       0.0f, 1.0f ),
-                        new Vector4( xpos + w, ypos,       1.0f, 1.0f ),
 
-                        new Vector4( xpos,     ypos + h,   0.0f, 0.0f ),
-                        new Vector4( xpos + w, ypos,       1.0f, 1.0f ),
-                        new Vector4( xpos + w, ypos + h,   1.0f, 0.0f ),
-                    };
                     GL.BindTexture(TextureTarget.Texture2D, ch.TexID);
-                    this.TextVertexArray.VertexBuffer.SetSubData(vertices);
-                    Renderer.DrawPrimative(PrimitiveType.Triangles, 6);
+                    this.TextVertexArray.Flush();
+                    Renderer.DrawIndexed(PrimitiveType.Triangles, 6);
+                    this.TextVertexArray.Reset();
+
                     position.X += ch.Advance * scale;
                 } else {
                     GameHandler.Logger.Error($"Character doesn't contain {c} char!");

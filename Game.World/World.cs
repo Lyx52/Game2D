@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Threading.Tasks;
 
 using OpenTK.Mathematics;
 using SimplexNoise;
@@ -162,18 +163,26 @@ namespace Game.World {
             // GameHandler.Profiler.EndSection("SingleChunkRendering");
         }
         private void CompressChunkData() {
-            using (FileStream compressedFile = IOUtils.OpenWriteStream(this.GetWorldFilePath("ChunkData.bin.gz"))) {
+            // First time creating the world, we must ensure that data has been flushed, replace with async functions later on
+            using (FileStream compressedFile = IOUtils.OpenWriteStream(this.GetWorldFilePath("ChunkData.bin.dfl"))) {
                 using (DeflateStream compressor = new DeflateStream(compressedFile, CompressionMode.Compress)) {
+                    this.ChunkStream.Flush();
+                    this.ChunkStream.Seek(0, SeekOrigin.Begin);
                     this.ChunkStream.CopyTo(compressor);
                     compressor.Close();
                 }
                 compressedFile.Close();
             }
             this.ChunkStream.Close();
+            this.ChunkStream.Dispose();
             File.Delete(this.GetWorldFilePath("ChunkData.bin"));
         }
         private void DecompressChunkData() {
-            using (FileStream compressedFile = IOUtils.OpenReadStream(this.GetWorldFilePath("ChunkData.bin.gz"))) {
+            // If for whatever reason chunkstream is already open close it and dispose
+            if (this.ChunkStream != default(FileStream))
+                this.ChunkStream.Close();
+
+            using (FileStream compressedFile = IOUtils.OpenReadStream(this.GetWorldFilePath("ChunkData.bin.dfl"))) {
                 using (DeflateStream decompressor = new DeflateStream(compressedFile, CompressionMode.Decompress)) {
                     this.ChunkStream = IOUtils.OpenReadWriteStream(this.GetWorldFilePath("ChunkData.bin"));
                     decompressor.CopyTo(this.ChunkStream);
@@ -182,8 +191,7 @@ namespace Game.World {
                 compressedFile.Close();
             }
             this.ChunkStream.Flush();
-            this.ChunkStream.Close();
-            File.Delete(this.GetWorldFilePath("ChunkData.bin.gz"));
+            File.Delete(this.GetWorldFilePath("ChunkData.bin.dfl"));
         }
         public string GetWorldFilePath(string fileName) {
             return Path.Combine(this.WorldDirectory.FullName, fileName);
@@ -202,6 +210,8 @@ namespace Game.World {
             return this.EntityHandler.GetPlayer();
         }
         public void Create() {
+
+            // TODO: Fix compression on world creation!
             Logger.Debug($"Creating world {this.WorldName}!");
             this.WorldDirectory = this.SavesDirectory.CreateSubdirectory(this.WorldName);
             
@@ -233,11 +243,10 @@ namespace Game.World {
         public void Load() {
             Logger.Debug($"Loading world {this.WorldName}!");
             foreach (FileInfo file in  this.WorldDirectory.GetFiles()) {
-                if (file.Name.Equals("ChunkData.bin.gz")) {
+                if (file.Name.Equals("ChunkData.bin.dfl")) {
                     this.DecompressChunkData();
-                    this.ChunkStream = IOUtils.OpenReadWriteStream(this.GetWorldFilePath("ChunkData.bin"));
                 }
-                if (file.Name.Equals("ChunkData.bin")) {
+                if (this.ChunkStream == default(FileStream) && file.Name.Equals("ChunkData.bin")) {
                     this.ChunkStream = file.Open(FileMode.Open, FileAccess.ReadWrite);
                 }
                 if (file.Name.Equals("WorldData.bin")) {
@@ -261,6 +270,10 @@ namespace Game.World {
             } else {
                 // Cannot load corrupted or incomplete world save, so create a new one
                 Logger.Warn($"Cannot load world {this.WorldName}, either corrupted or incomplete!");
+                if (this.WorldStream != default(FileStream))
+                    this.WorldStream.Dispose();
+                if (this.ChunkStream != default(FileStream))
+                    this.ChunkStream.Dispose();
                 this.Create();
             }
         }

@@ -51,7 +51,6 @@ namespace Game.World {
             this.WorldName = worldName;
             this.WorldSpriteSheet = new SpriteSheet(GameHandler.Renderer.GetTexture("spritesheet"), 3, 1);
             this.EntityHandler.SpawnPlayer(0, 0, Application.Keyboard, Application.Mouse);
-            
 
             // Load or create the world
             this.SavesDirectory = Directory.CreateDirectory(Path.Combine(IOUtils.GetCWD(), "saves"));
@@ -178,7 +177,7 @@ namespace Game.World {
             Logger.Debug($"Creating world {this.WorldName}!");
             this.WorldDirectory = this.SavesDirectory.CreateSubdirectory(this.WorldName);
             
-            this.WorldStream = IOUtils.OpenReadWriteStream(Path.Combine(this.WorldDirectory.FullName, "WorldData.bin"));
+            this.WorldStream = IOUtils.OpenWriteStream(Path.Combine(this.WorldDirectory.FullName, "WorldData.bin"));
             this.ChunkStream = IOUtils.OpenReadWriteStream(Path.Combine(this.WorldDirectory.FullName, "ChunkData.bin"));
 
             // Tags for storing essential world data
@@ -188,10 +187,18 @@ namespace Game.World {
         public void Save() {
             Logger.Debug($"Saving world {this.WorldName}!");
             
+            // Save chunks that are visible on screen
+            foreach(Chunk chunk in this.Chunks) {
+                this.SaveChunk(chunk);
+            }
+
             // Write world info stream
             this.WorldInfo.AddTag(this.GetPlayer().GetPlayerTag());
             this.WorldInfo.AddTag(this.ChunkInfo);
             this.WorldInfo.AddTag(new StringTag("WorldSeed", Noise.Seed.ToString()));
+            
+            // We overwrite the old file
+            this.WorldStream.Seek(0, SeekOrigin.Begin);
             this.WorldInfo.WriteTag(this.WorldStream);
         }
         public void Load() {

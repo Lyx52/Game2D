@@ -13,7 +13,7 @@ namespace Game.Utils {
             ERROR,
             CRITICAL
         }
-        private static int _LoggingLevel;
+        private static LogLevel _LoggingLevel;
         
         #if FILE_LOGGING
         private static StreamWriter _LogWriter;
@@ -29,14 +29,14 @@ namespace Game.Utils {
             _LogWriter.Close();
             #endif
         }
-        public static int LoggingLevel {
+        public static LogLevel LoggingLevel {
             get { return _LoggingLevel; }
-            set { _LoggingLevel = Math.Min(Math.Max(value, 0), 4); }
+            set { _LoggingLevel = (LogLevel)Math.Min(Math.Max((int)value, 0), 4); }
         }
 
         public static void Log(string message, LogLevel severity) {
             string log_message = $"Log::{severity}({DateTime.Now}) - {message}";
-            if (LoggingLevel <= ((int)severity)) {
+            if ((int)LoggingLevel <= (int)severity) {
                 Console.WriteLine(log_message);
                 #if FILE_LOGGING
                 _LogWriter.WriteLine(log_message);

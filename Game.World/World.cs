@@ -6,6 +6,7 @@ using Game.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 
 using OpenTK.Mathematics;
 using SimplexNoise;
@@ -160,6 +161,33 @@ namespace Game.World {
             }
             // GameHandler.Profiler.EndSection("SingleChunkRendering");
         }
+        private void CompressChunkData() {
+            using (FileStream compressedFile = IOUtils.OpenWriteStream(this.GetWorldFilePath("ChunkData.bin.gz"))) {
+                using (DeflateStream compressor = new DeflateStream(compressedFile, CompressionMode.Compress)) {
+                    this.ChunkStream.CopyTo(compressor);
+                    compressor.Close();
+                }
+                compressedFile.Close();
+            }
+            this.ChunkStream.Close();
+            File.Delete(this.GetWorldFilePath("ChunkData.bin"));
+        }
+        private void DecompressChunkData() {
+            using (FileStream compressedFile = IOUtils.OpenReadStream(this.GetWorldFilePath("ChunkData.bin.gz"))) {
+                using (DeflateStream decompressor = new DeflateStream(compressedFile, CompressionMode.Decompress)) {
+                    this.ChunkStream = IOUtils.OpenReadWriteStream(this.GetWorldFilePath("ChunkData.bin"));
+                    decompressor.CopyTo(this.ChunkStream);
+                    decompressor.Close();
+                }
+                compressedFile.Close();
+            }
+            this.ChunkStream.Flush();
+            this.ChunkStream.Close();
+            File.Delete(this.GetWorldFilePath("ChunkData.bin.gz"));
+        }
+        public string GetWorldFilePath(string fileName) {
+            return Path.Combine(this.WorldDirectory.FullName, fileName);
+        }
         private void DrawTile(in Renderer renderer, Vector2 position, Vector2i subsprite) {
             renderer.DispatchQuad(new DrawQuad2D(TILE_SIZE * position, new Vector2(TILE_SIZE), this.WorldSpriteSheet, subsprite));    
         }
@@ -177,8 +205,8 @@ namespace Game.World {
             Logger.Debug($"Creating world {this.WorldName}!");
             this.WorldDirectory = this.SavesDirectory.CreateSubdirectory(this.WorldName);
             
-            this.WorldStream = IOUtils.OpenWriteStream(Path.Combine(this.WorldDirectory.FullName, "WorldData.bin"));
-            this.ChunkStream = IOUtils.OpenReadWriteStream(Path.Combine(this.WorldDirectory.FullName, "ChunkData.bin"));
+            this.WorldStream = IOUtils.OpenWriteStream(this.GetWorldFilePath("WorldData.bin"));
+            this.ChunkStream = IOUtils.OpenReadWriteStream(this.GetWorldFilePath("ChunkData.bin"));
 
             // Tags for storing essential world data
             this.ChunkInfo = new CompoundTag("ChunkInfo");
@@ -196,17 +224,23 @@ namespace Game.World {
             this.WorldInfo.AddTag(this.GetPlayer().GetPlayerTag());
             this.WorldInfo.AddTag(this.ChunkInfo);
             this.WorldInfo.AddTag(new StringTag("WorldSeed", Noise.Seed.ToString()));
-            
+
             // We overwrite the old file
             this.WorldStream.Seek(0, SeekOrigin.Begin);
             this.WorldInfo.WriteTag(this.WorldStream);
+            this.CompressChunkData();
         }
         public void Load() {
             Logger.Debug($"Loading world {this.WorldName}!");
             foreach (FileInfo file in  this.WorldDirectory.GetFiles()) {
+                if (file.Name.Equals("ChunkData.bin.gz")) {
+                    this.DecompressChunkData();
+                    this.ChunkStream = IOUtils.OpenReadWriteStream(this.GetWorldFilePath("ChunkData.bin"));
+                }
                 if (file.Name.Equals("ChunkData.bin")) {
                     this.ChunkStream = file.Open(FileMode.Open, FileAccess.ReadWrite);
-                } else if (file.Name.Equals("WorldData.bin")) {
+                }
+                if (file.Name.Equals("WorldData.bin")) {
                     this.WorldStream = file.Open(FileMode.Open, FileAccess.ReadWrite);
                 }
             }
@@ -233,7 +267,6 @@ namespace Game.World {
         public void Dispose() {
             this.Save();
             this.WorldStream.Close();
-            this.ChunkStream.Close();
             this.EntityHandler.Dispose();
         }
     }

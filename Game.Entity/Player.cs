@@ -54,18 +54,18 @@ namespace Game.Entity {
             });
         }
         public void LoadPlayerData(CompoundTag playerTag) {
-            GameHandler.Logger.Assert(playerTag.Name == "Player", "Invalid compound tag provided!");
+            Logger.Assert(playerTag.Name == "Player", "Invalid compound tag provided!");
             
-            GameHandler.Logger.Assert(playerTag.Contains("Acceleration"), "Player tag doesnt contain Acceleration key!");
+            Logger.Assert(playerTag.Contains("Acceleration"), "Player tag doesnt contain Acceleration key!");
             this.KinematicBody.Acceleration = playerTag.GetDoubleTag("Acceleration").Value;
 
-            GameHandler.Logger.Assert(playerTag.Contains("Rotation"), "Player tag doesnt contain Rotation key!");
+            Logger.Assert(playerTag.Contains("Rotation"), "Player tag doesnt contain Rotation key!");
             this.KinematicBody.Rotation = playerTag.GetFloatTag("Rotation").Value;
 
-            GameHandler.Logger.Assert(playerTag.Contains("Position"), "Player tag doesnt contain Position key!");
+            Logger.Assert(playerTag.Contains("Position"), "Player tag doesnt contain Position key!");
             this.KinematicBody.Position = playerTag.GetVector2Tag("Position").Value;
 
-            GameHandler.Logger.Assert(playerTag.Contains("PlayerName"), "Player tag doesnt contain PlayerName key!");
+            Logger.Assert(playerTag.Contains("PlayerName"), "Player tag doesnt contain PlayerName key!");
             this.PlayerName = playerTag.GetStringTag("PlayerName").Value;
         }
         public override bool InRange(Entity target, float range)

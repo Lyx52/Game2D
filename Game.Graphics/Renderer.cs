@@ -136,7 +136,7 @@ namespace Game.Graphics {
             return (this.TextureUnitIndex + 1) >= this.MAX_TEXTURE_UNITS;
         }
         public void Dispose() {
-            GameHandler.Logger.Warn("Disposing render storage! Is this intentional?");
+            Logger.Warn("Disposing render storage! Is this intentional?");
             foreach (Texture tex in this.Textures.Values) {
                 tex.Dispose();
             }
@@ -147,7 +147,6 @@ namespace Game.Graphics {
         private RenderStorage Storage;
         private ShaderProgram TextureShader;
         private VertexArray<uint, Vertex> QuadVertexArray;
-        private BufferObject<float> CameraBuffer;
         public static Vector2[] DefaultUVCoords;
         public OrthoCamera RenderCamera;
         private GUIHandler GUIRenderer;
@@ -191,11 +190,9 @@ namespace Game.Graphics {
             // Setup vertex buffer/array
             this.QuadVertexArray = new VertexArray<uint, Vertex>(VertexLayout, this.Storage.MAX_INDICES, this.Storage.MAX_VERTICES, indices:quadIndices);
             this.GUIRenderer = new GUIHandler();
+            
             GUIHandler.LoadFont("./res/font/arial.ttf");
-            GameHandler.Logger.Debug($"CurrentFont: {GUIHandler.CurrentFace.MarshalFamilyName()}");
-            unsafe {
-                this.CameraBuffer = new BufferObject<float>(4 * 4, BufferTarget.UniformBuffer, uniform_binding: 1);
-            }
+            Logger.Debug($"CurrentFont: {GUIHandler.CurrentFace.MarshalFamilyName()}");
 
             // Init renderer camera camera draw size is window width divided by aspect ratio
             this.RenderCamera = new OrthoCamera(-(width / 2), (width / 2), -(height / 2), (height / 2));
@@ -208,14 +205,13 @@ namespace Game.Graphics {
             this.Storage.DispatchedQuads.Add(quad);
         }
         public void GenerateQuadGeometry() {
-
             // We need to sort quads by their layer(We do this to avoid depth buffers)
             this.Storage.DispatchedQuads.Sort();
             foreach (DrawQuad2D quad in this.Storage.DispatchedQuads) {
                 this.DrawQuad(quad);
             }
         }
-        public void DrawQuad(DrawQuad2D quad) {
+        public void DrawQuad(in DrawQuad2D quad) {
             if (this.QuadVertexArray.IsOverflow() || this.Storage.IsOverflow()) {
                 this.NextBatch();
             }
@@ -236,16 +232,8 @@ namespace Game.Graphics {
             GL.Scissor(0, 0, GameHandler.WindowSize.X, GameHandler.WindowSize.Y);
 
             this.Storage.Stats.TotalFlushCount = 0;
-            
-            unsafe {
-                this.RenderCamera.Recalculate(cameraPosition);
-                this.CameraBuffer.SetSubData(this.RenderCamera.ViewProjection, sizeof(Matrix4));
-            }
-            
+            this.TextureShader.SetMat4(this.RenderCamera.Recalculate(cameraPosition), "viewProjection");
             this.StartBatch();
-            // this.TextVertexArray.Bind();
-            // this.TextShader.Bind();
-            // this.DrawIndexed(PrimitiveType.Triangles, 6);
         }
         public void EndScene() {
             this.GenerateQuadGeometry();
@@ -278,7 +266,8 @@ namespace Game.Graphics {
         }
         public void OnResize(ResizeEventArgs args) {
             GameHandler.WindowSize = args.Size;
-            GL.Viewport(0, 0, args.Size.X, args.Size.Y);   
+            GL.Viewport(0, 0, args.Size.X, args.Size.Y);
+            this.GUIRenderer.SetTextProjection(args.Size);   
         }
         public static void DrawIndexed(PrimitiveType type, int indices) {
             GL.DrawElements(type, indices, DrawElementsType.UnsignedInt, 0);
@@ -309,14 +298,12 @@ namespace Game.Graphics {
             }
         }
         public void Dispose() {
-            this.RenderCamera.Dispose();
             this.GUIRenderer.Dispose();
             this.Storage.Dispose();
-
         }
         public void AddTexture(string name, Texture tex) {
             if (!this.Storage.Textures.TryAdd(name, tex)) {
-                GameHandler.Logger.Error($"Couldn't add {name} texture");
+                Logger.Error($"Couldn't add {name} texture");
             }
             GC.Collect();
         }
@@ -339,7 +326,7 @@ namespace Game.Graphics {
             if (this.Storage.Textures.TryGetValue(name, out Texture tex)) {
                 return tex;
             } else {
-                GameHandler.Logger.Error($"Texture {name} doesn't exist!");
+                Logger.Error($"Texture {name} doesn't exist!");
                 return this.Storage.Textures["default"];
             }
         }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System;
 
+using Game.Utils;
 using Game.Graphics;
 using Game.Input;
 
@@ -26,7 +27,7 @@ namespace Game.Entity {
             if (this.playerIndex >= 0) {
                 return (Player)this.entities[this.playerIndex];
             } else {
-                GameHandler.Logger.Critical("Player not initalized!");
+                Logger.Critical("Player not initalized!");
                 return default;
             }
         }

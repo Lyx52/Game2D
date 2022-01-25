@@ -352,9 +352,14 @@ namespace Game.World {
         public bool Contains(string key) {
             return this.Tags.ContainsKey(key);
         }
+        public bool TryGetValue(string key, out Tag output) {
+            bool result = this.Tags.TryGetValue(key, out Tag value);
+            output = value;
+            return result;
+        }
         public void AddTag(Tag tag) {
             if (!this.Tags.TryAdd(tag.Name, tag)) {
-                GameHandler.Logger.Error($"Tag with the name {tag.Name} already exists!");
+                Logger.Error($"Tag with the name {tag.Name} already exists!");
             }
         }
         public CompoundTag GetCompoundTag(string key) {
@@ -385,7 +390,7 @@ namespace Game.World {
             if (this.Tags.TryGetValue(key, out Tag tag)) {
                 return tag;
             } else {
-                GameHandler.Logger.Critical($"Compound tag {this.Name} does not contain {key}!");
+                Logger.Critical($"Compound tag {this.Name} does not contain {key}!");
                 return null;
             }
         }

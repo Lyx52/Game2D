@@ -4,9 +4,10 @@ using static FreeTypeSharp.Native.FT;
 using OpenTK.Mathematics;
 using OpenTK.Graphics.OpenGL4;
 using System.Collections.Generic;
+using Game.Utils;
 
 namespace Game.Graphics {
-    struct Character {
+    internal struct Character {
         public int TexID;           // Texture ID
         public Vector2i Size;       // Size of glyph
         public Vector2i Bearing;    // Offset from baseline to left/top of glyph
@@ -41,7 +42,7 @@ namespace Game.Graphics {
             CurrentFace = default(FreeTypeFaceFacade);
             FreeTypeLib = new FreeTypeLibrary();
             FT_Library_Version(FreeTypeLib.Native, out var major, out var minor, out var patch);
-            GameHandler.Logger.Debug($"FreeType version: {major}.{minor}.{patch}");
+            Logger.Debug($"FreeType version: {major}.{minor}.{patch}");
 
             this.DispatchedText = new List<(String Text, Vector2 Pos, float Scale, Vector3 Color)>();
             // Init GL objects
@@ -49,9 +50,8 @@ namespace Game.Graphics {
             
             // We set the textu projection matrix once and leave it
             this.TextShader.Bind();
-            Matrix4.CreateOrthographicOffCenter(0.0F, GameHandler.WindowSize.X, 0.0F, GameHandler.WindowSize.Y, 0.0F, 1.0F, out Matrix4 projection);
-            this.TextShader.SetMat4(projection, "textProjection");
-
+            this.SetTextProjection(GameHandler.WindowSize);
+            
             this.TextVertexArray = new VertexArray<uint, Vector4>(new VertexLayout(
                 new List<VertexElement>() {
                     new VertexElement("vertex", ElementType.Vector4f, 0) 
@@ -60,9 +60,13 @@ namespace Game.Graphics {
                 }
             );
         }
+        public void SetTextProjection(in Vector2i windowSize) {
+            Matrix4.CreateOrthographicOffCenter(0.0F, windowSize.X, 0.0F, windowSize.Y, 0.0F, 1.0F, out Matrix4 projection);
+            this.TextShader.SetMat4(projection, "textProjection");
+        }
         public static void LoadFont(string filePath, uint size=48) {
             if (FT_New_Face(FreeTypeLib.Native, filePath, 0, out IntPtr face) != FreeTypeSharp.Native.FT_Error.FT_Err_Ok) {
-                GameHandler.Logger.Critical($"Error! Could not read font file {filePath}!");
+                Logger.Critical($"Error! Could not read font file {filePath}!");
             }
             // Set current font face
             CurrentFace = new FreeTypeFaceFacade(FreeTypeLib, face);
@@ -87,7 +91,7 @@ namespace Game.Graphics {
                 // Load char bitmap
                 FreeTypeSharp.Native.FT_Error code = FT_Load_Char(CurrentFace.Face, i, FT_LOAD_RENDER);
                 if (code != FreeTypeSharp.Native.FT_Error.FT_Err_Ok) {
-                    GameHandler.Logger.Critical($"Freetype {code} error could not load glyph for {(char)i} char using font {CurrentFace.MarshalFamilyName()}!");
+                    Logger.Critical($"Freetype {code} error could not load glyph for {(char)i} char using font {CurrentFace.MarshalFamilyName()}!");
                 }
                 
                 // Bind texture
@@ -116,7 +120,7 @@ namespace Game.Graphics {
                 if (!CharacterMap.TryAdd((char)i, 
                     new Character(texID, new Vector2i((int)CurrentFace.GlyphBitmap.width, (int)CurrentFace.GlyphBitmap.rows), new Vector2i((int)CurrentFace.GlyphBitmapLeft, (int)CurrentFace.GlyphBitmapTop), (uint)CurrentFace.GlyphMetricHorizontalAdvance))
                 ){
-                    GameHandler.Logger.Error($"Cannot add already existing char {(char)i} to glyph dictionary!");
+                    Logger.Error($"Cannot add already existing char {(char)i} to glyph dictionary!");
                 }
             }
         }
@@ -169,7 +173,7 @@ namespace Game.Graphics {
 
                     position.X += ch.Advance * scale;
                 } else {
-                    GameHandler.Logger.Error($"Character doesn't contain {c} char!");
+                    Logger.Error($"Character doesn't contain {c} char!");
                 }
             }
         }

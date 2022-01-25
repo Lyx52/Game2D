@@ -53,7 +53,7 @@ namespace Game.Graphics {
                 int new_location = GL.GetUniformLocation(this.programID, varName);
                 
                 if (new_location < 0) {
-                    GameHandler.Logger.Warn($"Shader uniform \"{varName}\" location could not be found!");
+                    Logger.Warn($"Shader uniform \"{varName}\" location could not be found!");
                 } else {
                     this.uniformLocations.Add(varName, new_location);
                 }
@@ -76,6 +76,9 @@ namespace Game.Graphics {
             GL.ProgramUniform1(this.programID, this.GetUniformLocation(varName), value);
         }
         public void SetMat4(Matrix4 matrix, string varName) {
+            GL.ProgramUniformMatrix4(this.programID, this.GetUniformLocation(varName), false, ref matrix);
+        }
+        public void SetMat4(ref Matrix4 matrix, string varName) {
             GL.ProgramUniformMatrix4(this.programID, this.GetUniformLocation(varName), false, ref matrix);
         }
         public void SetSampler2D(int textureUnit, string varName) {

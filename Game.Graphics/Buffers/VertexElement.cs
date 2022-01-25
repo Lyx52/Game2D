@@ -1,4 +1,5 @@
 using OpenTK.Graphics.OpenGL4;
+using Game.Utils;
 
 namespace Game.Graphics {
     public enum ElementType : int {
@@ -53,7 +54,7 @@ namespace Game.Graphics {
                 case ElementType.Vector4i: return VertexAttribPointerType.Int;
                 case ElementType.Bool: return VertexAttribPointerType.Int;
                 default: {
-                    GameHandler.Logger.Error("Unkown element type!");
+                    Logger.Error("Unkown element type!");
                     return 0;
                 }
             }    
@@ -73,7 +74,7 @@ namespace Game.Graphics {
                 case ElementType.Vector4i: return 4;
                 case ElementType.Bool: return 1;
                 default: {
-                    GameHandler.Logger.Error("Unkown element type!");
+                    Logger.Error("Unkown element type!");
                     return 0;
                 }
             }
@@ -93,7 +94,7 @@ namespace Game.Graphics {
                 case ElementType.Vector4i: return 16;
                 case ElementType.Bool: return 1;
                 default: {
-                    GameHandler.Logger.Error("Unkown element type!");
+                    Logger.Error("Unkown element type!");
                     return 0;
                 }
             }

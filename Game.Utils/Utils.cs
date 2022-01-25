@@ -12,7 +12,7 @@ namespace Game.Utils {
             try {
                 return decoder.GetString(ReadFile(filePath));
             } catch(ArgumentNullException e) {
-                GameHandler.Logger.Error($"Error while converting to string!\n{e}");
+                Logger.Error($"Error while converting to string!\n{e}");
             }
             return "";
         }
@@ -20,11 +20,11 @@ namespace Game.Utils {
         public static string GetCWD() {
             return Directory.GetCurrentDirectory();
         }
-        public static FileStream OpenFileStream(string filePath) {
+        public static FileStream OpenReadWriteStream(string filePath) {
             try {
                 return File.Open(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
             } catch(IOException e) {
-                GameHandler.Logger.Critical($"File {filePath} could not be opened/created!\n{e}");
+                Logger.Critical($"File {filePath} could not be opened/created!\n{e}");
                 return default(FileStream);
             }
         }
@@ -32,7 +32,7 @@ namespace Game.Utils {
             try {
                 return File.Open(filePath, FileMode.Create);
             } catch(IOException e) {
-                GameHandler.Logger.Critical($"File {filePath} could not be  created!\n{e}");
+                Logger.Critical($"File {filePath} could not be  created!\n{e}");
                 return null;
             }
         }
@@ -40,7 +40,7 @@ namespace Game.Utils {
             if (File.Exists(filePath)) {
                 return File.OpenRead(filePath); 
             } else {
-                GameHandler.Logger.Critical($"File {filePath} does not exist!");
+                Logger.Critical($"File {filePath} does not exist!");
                 return null;
             } 
         }
@@ -50,16 +50,14 @@ namespace Game.Utils {
                 try {
                     fs.Read(data, 0, data.Length);
                 } catch (IOException e) {
-                    GameHandler.Logger.Error($"Error while reading the file!\n{e}");
+                    Logger.Error($"Error while reading the file!\n{e}");
                 }
                 return data;
             }
         }
         public static StreamWriter GetLogWriter(string logFolder="logs", string logFilePrefix="gamelog") {
             string absolutePath = Path.Combine(GetCWD(), logFolder);
-            if (!Directory.Exists(absolutePath)) {
-                Directory.CreateDirectory(absolutePath);
-            }
+            Directory.CreateDirectory(absolutePath);
             string logPath = Path.Combine(absolutePath, $"{logFilePrefix}_{StringUtils.GetShortDate(seperator:"")}_{StringUtils.GetShortTime(seperator:"")}.log");
             
             StreamWriter writer = new StreamWriter(logPath);
@@ -151,7 +149,7 @@ namespace Game.Utils {
             }
             return -1;
         }
-        public static T[] Flatten<T>(T[,] array) {
+        public static T[] Flatten<T>(ref T[,] array) {
             T[] output = new T[array.GetLength(0) * array.GetLength(1)];
             IEnumerator enumerator = array.GetEnumerator();
             int i = 0;
@@ -160,9 +158,9 @@ namespace Game.Utils {
             }
             return output;
         }
-        public static T[,] To2DArray<T>(T[] array, int width, int height) {
+        public static T[,] To2DArray<T>(ref T[] array, int width, int height) {
             if ((width * height) != array.Length)
-                GameHandler.Logger.Critical("Invalid width/height passed!");
+                Logger.Critical("Invalid width/height passed!");
                 
             IEnumerator enumerator = array.GetEnumerator();
             T[,] output = new T[height, width];

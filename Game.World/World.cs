@@ -14,7 +14,7 @@ using SimplexNoise;
 namespace Game.World {
     public struct Chunk {
         public Vector2i Position { get; private set; }
-        public byte[,] Tilemap { get; set; }
+        public byte[,] Tilemap;
         public Chunk(Vector2i position, int width, int height) {
             this.Tilemap = new byte[width, height];
             this.Position = position;
@@ -49,7 +49,6 @@ namespace Game.World {
             this.EntityHandler = new EntityManager();
             Noise.Seed = seed;
             this.WorldName = worldName;
-
             this.WorldSpriteSheet = new SpriteSheet(GameHandler.Renderer.GetTexture("spritesheet"), 3, 1);
             this.EntityHandler.SpawnPlayer(0, 0, Application.Keyboard, Application.Mouse);
             
@@ -59,7 +58,6 @@ namespace Game.World {
             this.WorldDirectory = Array.Find(this.SavesDirectory.GetDirectories(), saveDir => {
                 return saveDir.Name == this.WorldName;
             });
-
             if (this.WorldDirectory == default(DirectoryInfo)) {
                 // Directory was not found, so the world doesn't exist!
                 this.Create();
@@ -70,17 +68,18 @@ namespace Game.World {
         }
         public void GenerateGeometry(Vector2 position) {
             Vector2i center = GetChunkPosition(position);
-            //GameHandler.Profiler.StartSection("ChunkGeneration");
+            // Profiler.StartSection("ChunkGeneration");
             for (int row = -(MAX_CHUNK_DELTA - 1); row < MAX_CHUNK_DELTA; row++) {
                 for (int col = -(MAX_CHUNK_DELTA - 1); col < MAX_CHUNK_DELTA; col++) {
                     // Generate a new chunk at chunkPos if chunk list dosnt already have it...
                     Vector2i chunkPos = Vector2i.Multiply(center + new Vector2i(col, row), CHUNK_SIZE);
                     if (this.Chunks.Exists(chunk => chunk.Position == chunkPos))
                         continue;
-                    this.Chunks.Add(GenerateChunk(chunkPos));
+                    
+                    this.Chunks.Add(this.LoadChunk(chunkPos));
                 }
             }
-            //GameHandler.Profiler.EndSection("ChunkGeneration");
+            // Profiler.EndSection("ChunkGeneration");
             //GameHandler.Profiler.StartSection("ChunkRemoval");
             // Remove chunk if its out of range
             this.Chunks.RemoveAll(chunk => {
@@ -89,6 +88,7 @@ namespace Game.World {
                 
                 // We save the chunks we remove from range
                 if (mustBeRemoved) this.SaveChunk(chunk);
+
                 return mustBeRemoved;
             });
             //GameHandler.Profiler.EndSection("ChunkRemoval");
@@ -103,21 +103,49 @@ namespace Game.World {
             this.EntityHandler.Render(renderer);
         }
         public void SaveChunk(Chunk chunk) {
-            CompoundTag chunkTag = new CompoundTag($"Chunk_{chunk.Position}");
-            chunkTag.AddTag(new Vector2iTag("Position", chunk.Position));
-            chunkTag.AddTag(new ByteArrayTag("Data", ArrayUtils.Flatten(chunk.Tilemap)));
+            if (this.ChunkInfo.TryGetValue(chunk.Position.ToString(), out Tag tag)) {
+                long lastPosition = this.ChunkStream.Position;
+                this.ChunkStream.Seek(((LongTag)tag).Value, SeekOrigin.Begin);
+                this.ChunkStream.Write(ArrayUtils.Flatten(ref chunk.Tilemap));
+                this.ChunkStream.Seek(lastPosition, SeekOrigin.Begin);
+                return;
+            } else {
+                Profiler.StartSection("SaveChunk");
+                // Create new
+                long chunkStartPosition = this.ChunkStream.Position;
+                this.ChunkStream.Write(ArrayUtils.Flatten(ref chunk.Tilemap));
 
-            // Add absolute position in binary file
-            this.ChunkInfo.AddTag(new LongTag(chunkTag.Name, this.ChunkStream.Position));
-            chunkTag.WriteTag(this.ChunkStream);
+                // Add absolute position in binary file
+                this.ChunkInfo.AddTag(new LongTag(chunk.Position.ToString(), chunkStartPosition));
+                Profiler.EndSection("SaveChunk");
+            }
         }
-        public Chunk GenerateChunk(Vector2i position, int offsetX=0) {
+        public Chunk LoadChunk(Vector2i chunkPosition) {
+            if (this.ChunkInfo.TryGetValue(chunkPosition.ToString(), out Tag tag)) {
+                Profiler.StartSection("LoadChunk");
+                long lastPosition = this.ChunkStream.Position;
+                this.ChunkStream.Seek(((LongTag)tag).Value, SeekOrigin.Begin);
+                
+                Chunk chunk = new Chunk(chunkPosition, CHUNK_SIZE, CHUNK_SIZE);
+                byte[] data = new byte[CHUNK_SIZE * CHUNK_SIZE];
+                this.ChunkStream.Read(data, 0, data.Length);
+                chunk.Tilemap = ArrayUtils.To2DArray(ref data, CHUNK_SIZE, CHUNK_SIZE);
+                
+                this.ChunkStream.Seek(lastPosition, SeekOrigin.Begin);
+                Profiler.EndSection("LoadChunk");
+                return chunk;
+            }
+            return this.GenerateChunk(chunkPosition);;
+        }
+        public Chunk GenerateChunk(Vector2i position) {
+            Profiler.StartSection("GenerateChunk");
             Chunk chunk = new Chunk(position, CHUNK_SIZE, CHUNK_SIZE);
             for (int row = 0; row < CHUNK_SIZE; row++) {
                 for (int col = 0; col < CHUNK_SIZE; col++) {
                     chunk.Tilemap[row, col] = this.GetTileSprite(row + position.Y, col + position.X);
                 }
             }
+            Profiler.EndSection("GenerateChunk");
             return chunk;
         }
         public byte GetTileSprite(int row, int col) {
@@ -147,24 +175,18 @@ namespace Game.World {
             return this.EntityHandler.GetPlayer();
         }
         public void Create() {
-            GameHandler.Logger.Debug($"Creating world {this.WorldName}!");
+            Logger.Debug($"Creating world {this.WorldName}!");
             this.WorldDirectory = this.SavesDirectory.CreateSubdirectory(this.WorldName);
             
-            this.WorldStream = IOUtils.OpenFileStream(Path.Combine(this.WorldDirectory.FullName, "WorldData.bin"));
-            this.ChunkStream = IOUtils.OpenFileStream(Path.Combine(this.WorldDirectory.FullName, "ChunkData.bin"));
+            this.WorldStream = IOUtils.OpenReadWriteStream(Path.Combine(this.WorldDirectory.FullName, "WorldData.bin"));
+            this.ChunkStream = IOUtils.OpenReadWriteStream(Path.Combine(this.WorldDirectory.FullName, "ChunkData.bin"));
 
             // Tags for storing essential world data
             this.ChunkInfo = new CompoundTag("ChunkInfo");
             this.WorldInfo = new CompoundTag("WorldInfo");
-
-            // for (int i = 0; i < 1000; i++) {
-            //     TestEntity entity = new TestEntity(i, (float)Rnd.NextDouble());
-            //     entity.Sprite.SpriteTexture = GameHandler.Renderer.GetTexture("grass");
-            //     this.EntityHandler.AddEntity(entity);
-            // }
         }
         public void Save() {
-            GameHandler.Logger.Debug($"Saving world {this.WorldName}!");
+            Logger.Debug($"Saving world {this.WorldName}!");
             
             // Write world info stream
             this.WorldInfo.AddTag(this.GetPlayer().GetPlayerTag());
@@ -173,7 +195,7 @@ namespace Game.World {
             this.WorldInfo.WriteTag(this.WorldStream);
         }
         public void Load() {
-            GameHandler.Logger.Debug($"Loading world {this.WorldName}!");
+            Logger.Debug($"Loading world {this.WorldName}!");
             foreach (FileInfo file in  this.WorldDirectory.GetFiles()) {
                 if (file.Name.Equals("ChunkData.bin")) {
                     this.ChunkStream = file.Open(FileMode.Open, FileAccess.ReadWrite);
@@ -187,14 +209,17 @@ namespace Game.World {
                 this.WorldInfo = (CompoundTag)Tag.ReadTag(this.WorldStream);
                 
                 // Load player data
-                GameHandler.Logger.Assert(this.WorldInfo.Contains("Player"), "WorldInfo tag doesn't contain Player key!");
+                Logger.Assert(this.WorldInfo.Contains("Player"), "WorldInfo tag doesn't contain Player key!");
                 this.GetPlayer().LoadPlayerData(this.WorldInfo.GetCompoundTag("Player"));
                 
-                GameHandler.Logger.Assert(this.WorldInfo.Contains("ChunkInfo"), "WorldInfo tag doesn't contain ChunkInfo key!");
+                Logger.Assert(this.WorldInfo.Contains("ChunkInfo"), "WorldInfo tag doesn't contain ChunkInfo key!");
                 this.ChunkInfo = this.WorldInfo.GetCompoundTag("ChunkInfo");
+
+                // After every tag is loaded we clear world info tag
+                this.WorldInfo.Tags.Clear();
             } else {
                 // Cannot load corrupted or incomplete world save, so create a new one
-                GameHandler.Logger.Warn($"Cannot load world {this.WorldName}, either corrupted or incomplete!");
+                Logger.Warn($"Cannot load world {this.WorldName}, either corrupted or incomplete!");
                 this.Create();
             }
         }

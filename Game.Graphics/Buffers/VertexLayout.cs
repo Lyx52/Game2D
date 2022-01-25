@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Game.Utils;
 
 namespace Game.Graphics {
     public struct VertexLayout {
@@ -14,7 +15,7 @@ namespace Game.Graphics {
             this.Components = 0;
             this.Size = 0;
             
-            GameHandler.Logger.Assert(elements != null && elements.Count > 0, "Invalid vertex element list passed!");
+            Logger.Assert(elements != null && elements.Count > 0, "Invalid vertex element list passed!");
             this.CalculateLayout();
         }
         private void CalculateLayout() {

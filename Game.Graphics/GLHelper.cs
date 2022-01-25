@@ -1,4 +1,6 @@
+#define OPENGL_DEBUG
 using OpenTK.Graphics.OpenGL4;
+using Game.Utils;
 
 namespace Game.Graphics {
     public enum GLObject {
@@ -9,9 +11,9 @@ namespace Game.Graphics {
     public class GLHelper {
         public static readonly TextureUnit DefaultTextureUnit = TextureUnit.Texture0;
         public static void DisplayGLInfo() {
-            GameHandler.Logger.Info($"OpenGL Context: {GL.GetString(StringName.Version)}");
-            GameHandler.Logger.Info($"OpenGL Renderer: {GL.GetString(StringName.Renderer)}");
-            GameHandler.Logger.Info($"GLSL Version: {GL.GetString(StringName.ShadingLanguageVersion)}");
+            Logger.Info($"OpenGL Context: {GL.GetString(StringName.Version)}");
+            Logger.Info($"OpenGL Renderer: {GL.GetString(StringName.Renderer)}");
+            Logger.Info($"GLSL Version: {GL.GetString(StringName.ShadingLanguageVersion)}");
         }
         public static string GetGLErrorString(ErrorCode code) {
             switch(code) {
@@ -28,7 +30,7 @@ namespace Game.Graphics {
             #if OPENGL_DEBUG
             ErrorCode errorCode = GL.GetError();
             if (errorCode != ErrorCode.NoError) {
-                GameHandler.Logger.Error($"GL ERROR! @{stage}, {errorCode}: {GetGLErrorString(errorCode)}");
+                Logger.Error($"GL ERROR! @{stage}, {errorCode}: {GetGLErrorString(errorCode)}");
             }
             #endif
         }
@@ -40,14 +42,14 @@ namespace Game.Graphics {
                     GL.GetProgram(objectID, GetProgramParameterName.LinkStatus, out int linkStatus);
                     if (linkStatus == 0) {
                         GL.GetProgramInfoLog(objectID, out string info);
-                        GameHandler.Logger.Error($"Error while linking ShaderProgram: {(info.Length > 0 ? info : "Not linked!")}");
+                        Logger.Error($"Error while linking ShaderProgram: {(info.Length > 0 ? info : "Not linked!")}");
                     }    
                 } break;
                 case GLObject.SHADER: {
                     GL.GetShader(objectID, ShaderParameter.CompileStatus, out int compileStatus);
                     if (compileStatus == 0) {
                         GL.GetShaderInfoLog(objectID, out string info);
-                        GameHandler.Logger.Error($"Error while compiling ID({objectID}) - {GLHelper.GetShaderType(objectID)}: {(info.Length > 0 ? info : "Not compiled!")}");
+                        Logger.Error($"Error while compiling ID({objectID}) - {GLHelper.GetShaderType(objectID)}: {(info.Length > 0 ? info : "Not compiled!")}");
                     }
                 } break;
                 case GLObject.FRAMEBUFFER: {
@@ -55,16 +57,16 @@ namespace Game.Graphics {
                     switch(errorCode) {
                         case FramebufferErrorCode.FramebufferComplete: break;
                         case FramebufferErrorCode.FramebufferIncompleteAttachment: {
-                            GameHandler.Logger.Error($"Error not all framebuffer attachment points are framebuffer attachment complete!");
+                            Logger.Error($"Error not all framebuffer attachment points are framebuffer attachment complete!");
                         } break;
                         case FramebufferErrorCode.FramebufferIncompleteMissingAttachment: {
-                            GameHandler.Logger.Error($"Error no images are attached to the framebuffer!");
+                            Logger.Error($"Error no images are attached to the framebuffer!");
                         } break;
                         case FramebufferErrorCode.FramebufferUnsupported: {
-                            GameHandler.Logger.Error($"Error internal formats of the attached images violates an implementation-dependent set of restrictions!");
+                            Logger.Error($"Error internal formats of the attached images violates an implementation-dependent set of restrictions!");
                         } break;
                         default: {
-                            GameHandler.Logger.Error($"Unkown framebuffer error! {errorCode}");    
+                            Logger.Error($"Unkown framebuffer error! {errorCode}");    
                         } break;
                     }
                 } break;

@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System;
+using Game.Utils;
+
 namespace Game.Entity {
         public abstract class Entity : IDisposable {
         private SortedList<string, EntityComponent> components;
@@ -14,7 +16,7 @@ namespace Game.Entity {
         }
         public void AttachComponent(EntityComponent component, string componentName) {
             if (this.components.ContainsKey(componentName)) {
-                GameHandler.Logger.Error($"Component with name <{componentName}> already exists!");
+                Logger.Error($"Component with name <{componentName}> already exists!");
             } else {
                 this.components.Add(componentName, component);
             }
@@ -29,7 +31,7 @@ namespace Game.Entity {
             if (this.components.ContainsKey(componentName)) {
                 return this.components[componentName];
             } else {
-                GameHandler.Logger.Error($"Component with name <{componentName}> dosn't exist!");
+                Logger.Error($"Component with name <{componentName}> dosn't exist!");
                 return default(EntityComponent);
             }
         }
@@ -37,7 +39,7 @@ namespace Game.Entity {
             if (this.components.ContainsKey(componentName)) {
                 this.components[componentName] = value;
             } else {
-                GameHandler.Logger.Error($"Component with name <{componentName}> dosn't exist!");
+                Logger.Error($"Component with name <{componentName}> dosn't exist!");
             }
         }
         public virtual void Update(double dt) {

@@ -1,12 +1,11 @@
+#define FILE_LOGGING
 using System;
 #if FILE_LOGGING
 using System.IO;
 #endif
 
-// TODO: Fix file logging, broken...
-
 namespace Game.Utils {
-    public class Logger : IDisposable {
+    public static class Logger {
         public enum LogLevel {
             INFO,
             WARN,
@@ -14,56 +13,56 @@ namespace Game.Utils {
             ERROR,
             CRITICAL
         }
-        private int _LoggingLevel = 0;
+        private static int _LoggingLevel;
         
         #if FILE_LOGGING
-        private StreamWriter LogWriter = IOUtils.GetLogWriter();
+        private static StreamWriter _LogWriter;
         #endif
-
-        public void Close() {
+        static Logger() {
+            _LoggingLevel = 0;
+            _LogWriter = IOUtils.GetLogWriter();
+        }
+        public static void Close() {
             #if FILE_LOGGING
-            LogWriter.WriteLine($"Log::End - {DateTime.Now}");
-            LogWriter.Flush();
-            LogWriter.Close();
+            _LogWriter.WriteLine($"Log::End - {DateTime.Now}");
+            _LogWriter.Flush();
+            _LogWriter.Close();
             #endif
         }
-        public int LoggingLevel {
-            get { return this._LoggingLevel; }
-            set { this._LoggingLevel = Math.Min(Math.Max(value, 0), 4); }
+        public static int LoggingLevel {
+            get { return _LoggingLevel; }
+            set { _LoggingLevel = Math.Min(Math.Max(value, 0), 4); }
         }
 
-        public void Log(string message, LogLevel severity) {
+        public static void Log(string message, LogLevel severity) {
             string log_message = $"Log::{severity}({DateTime.Now}) - {message}";
-            if (this.LoggingLevel <= ((int)severity)) {
+            if (LoggingLevel <= ((int)severity)) {
                 Console.WriteLine(log_message);
                 #if FILE_LOGGING
-                LogWriter.WriteLine(log_message);
-                LogWriter.Flush();
+                _LogWriter.WriteLine(log_message);
+                _LogWriter.Flush();
                 #endif
             }
         }
-        public void Info(string message) {
-            this.Log(message, LogLevel.INFO);
+        public static void Info(string message) {
+            Log(message, LogLevel.INFO);
         }
-        public void Warn(string message) {
-            this.Log(message, LogLevel.WARN);
+        public static void Warn(string message) {
+            Log(message, LogLevel.WARN);
         }
-        public void Debug(string message) {
-            this.Log(message, LogLevel.DEBUG);
+        public static void Debug(string message) {
+            Log(message, LogLevel.DEBUG);
         }
-        public void Error(string message) {
-            this.Log(message, LogLevel.ERROR);
+        public static void Error(string message) {
+            Log(message, LogLevel.ERROR);
         }
-        public void Critical(string message) {
-            this.Log(message, LogLevel.CRITICAL);
+        public static void Critical(string message) {
+            Log(message, LogLevel.CRITICAL);
             Environment.Exit(1);
         }
-        public void Assert(bool assertion, string errorMessage) {
+        public static void Assert(bool assertion, string errorMessage) {
             if (!assertion)
-                this.Critical($"ASSERTION FAILED: {errorMessage}");
-        }
-        public void Dispose() {
-            this.Close();
+                Critical($"ASSERTION FAILED: {errorMessage}");
         }
     }
 }

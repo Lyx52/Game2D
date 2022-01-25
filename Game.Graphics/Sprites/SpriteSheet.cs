@@ -1,6 +1,7 @@
 using OpenTK.Mathematics;
 using System;
 using System.Collections.Generic;
+using Game.Utils;
 
 namespace Game.Graphics {
     public class SpriteSheet : Sprite {
@@ -42,7 +43,7 @@ namespace Game.Graphics {
         }
         public void AddNamedSubSprite(string spriteName, int x, int y) {
             if (this.SubSprites.ContainsKey(spriteName)) {
-                GameHandler.Logger.Error($"Trying to add already defined named SubSprite({spriteName})!");
+                Logger.Error($"Trying to add already defined named SubSprite({spriteName})!");
             } else {
                 this.SubSprites.Add(spriteName, new Vector2i(x, y));
             }
@@ -51,7 +52,7 @@ namespace Game.Graphics {
             if (this.SubSprites.ContainsKey(spriteName)) {
                 return this.GetSubSprite(this.SubSprites[spriteName]);
             } else {
-                GameHandler.Logger.Error($"Trying to get undefined named SubSprite({spriteName})!");
+                Logger.Error($"Trying to get undefined named SubSprite({spriteName})!");
                 return this.GetTexCoords();
             }    
         }
@@ -62,7 +63,7 @@ namespace Game.Graphics {
             try {
                 return this.tileUV[y][x];
             } catch (IndexOutOfRangeException) {
-                GameHandler.Logger.Error($"Trying to access SubSprite out of Spritesheet range({x}, {y})!");
+                Logger.Error($"Trying to access SubSprite out of Spritesheet range({x}, {y})!");
                 return this.GetTexCoords();
             }
         }

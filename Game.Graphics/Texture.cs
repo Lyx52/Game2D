@@ -5,6 +5,7 @@ using SixLabors.ImageSharp.Processing;
 using System.IO;
 using System;
 using System.Runtime.InteropServices;
+using Game.Utils;
 
 namespace Game.Graphics {
     public class Texture : IDisposable {
@@ -53,7 +54,6 @@ namespace Game.Graphics {
             this.Bind();
             GL.TextureStorage2D(this.TextureID, 1, internalFormat, width, height);
             GL.TextureSubImage2D(this.TextureID, 0, 0, 0, width, height, pixelFormat, PixelType.UnsignedByte, data);
-            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D); 
         }
         public void SetData(in byte[] data, int width, int height, SizedInternalFormat internalFormat=SizedInternalFormat.Rgba8, PixelFormat pixelFormat=PixelFormat.Rgba) {
             this.Bind();
@@ -62,7 +62,7 @@ namespace Game.Graphics {
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
         }
         public void Dispose() {
-            GameHandler.Logger.Warn("Disposing texture! Is this intentional?");
+            Logger.Warn("Disposing texture! Is this intentional?");
             GL.DeleteTexture(this.TextureID);
         }
         public unsafe static Texture Load(string filePath) {
@@ -88,7 +88,7 @@ namespace Game.Graphics {
                 GLHelper.CheckGLError($"Texture.LoadTexture<{filePath}>");
                 return texture;
             } catch(IOException e) {
-                GameHandler.Logger.Error($"Error while opening image! {e}");
+                Logger.Error($"Error while opening image! {e}");
             }
             return new Texture(1, 1);
         }

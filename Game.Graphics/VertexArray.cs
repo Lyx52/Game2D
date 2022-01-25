@@ -37,8 +37,8 @@ namespace Game.Graphics {
             this.IndicesCount = 0;
             this.VertexCount = 0;
         }
-        public bool IsOverflow() {
-            return this.VertexBuffer.IsOverflow(4) || this.IndexBuffer.IsOverflow(6);
+        public bool IsOverflow(int vertexCount=4, int indicesCount=6) {
+            return this.VertexBuffer.IsOverflow(vertexCount) || this.IndexBuffer.IsOverflow(indicesCount);
         }
         public void AppendVertex(TVertexType vertex) {
             this.VertexBuffer.AppendElement(vertex);

@@ -6,6 +6,7 @@ using OpenTK.Graphics.OpenGL4;
 using Game.Input;
 using Game.Graphics;
 using Game.World;
+using Game.Utils;
 
 using System;
 using System.ComponentModel;
@@ -43,7 +44,7 @@ namespace Game.Core {
             Renderer.LoadTexture("spritesheet", "./res/textures/tile_spritesheet.png");
 
             // Display system info
-            GameHandler.Logger.Info($"OS Version: {System.Environment.OSVersion}");
+            Logger.Info($"OS Version: {System.Environment.OSVersion}");
             GLHelper.DisplayGLInfo();
         }
         public void LoadWorld() {
@@ -67,7 +68,7 @@ namespace Game.Core {
         }
         protected override void OnClosing(CancelEventArgs e)
         {
-            GameHandler.Logger.Debug("Closing window!");
+            Logger.Debug("Closing window!");
             this.Renderer.Dispose();
             this.World.Dispose();
             base.OnClosing(e);

@@ -38,6 +38,9 @@ namespace Game.Graphics {
         public void SetSubData(IntPtr data, int sizeInBytes) {
             GL.BufferSubData(this.Type, (IntPtr)0, sizeInBytes, data);
         }
+        public unsafe void SetSubData(in TDataType[] data) {
+            GL.BufferSubData(this.Type, (IntPtr)0, sizeof(TDataType) * data.Length, data);
+        }
         public void AppendElement(in TDataType data) {
             if (this.IsImmutable)
                 GameHandler.Logger.Critical($"Trying to modify immutable {this.Type} buffer!");

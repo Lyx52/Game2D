@@ -8,7 +8,7 @@ namespace Game.Graphics {
         PROGRAM,
         FRAMEBUFFER
     }
-    public class GLHelper {
+    public static class GLDebug {
         public static readonly TextureUnit DefaultTextureUnit = TextureUnit.Texture0;
         public static void DisplayGLInfo() {
             Logger.Info($"OpenGL Context: {GL.GetString(StringName.Version)}");
@@ -49,7 +49,7 @@ namespace Game.Graphics {
                     GL.GetShader(objectID, ShaderParameter.CompileStatus, out int compileStatus);
                     if (compileStatus == 0) {
                         GL.GetShaderInfoLog(objectID, out string info);
-                        Logger.Error($"Error while compiling ID({objectID}) - {GLHelper.GetShaderType(objectID)}: {(info.Length > 0 ? info : "Not compiled!")}");
+                        Logger.Error($"Error while compiling ID({objectID}) - {GLDebug.GetShaderType(objectID)}: {(info.Length > 0 ? info : "Not compiled!")}");
                     }
                 } break;
                 case GLObject.FRAMEBUFFER: {

@@ -85,7 +85,7 @@ namespace Game.Graphics {
                 img.Dispose();
                 GC.Collect();
 
-                GLHelper.CheckGLError($"Texture.LoadTexture<{filePath}>");
+                GLDebug.CheckGLError($"Texture.LoadTexture<{filePath}>");
                 return texture;
             } catch(IOException e) {
                 Logger.Error($"Error while opening image! {e}");

@@ -48,11 +48,8 @@ namespace Game.Entity {
             foreach(Entity e in this.entities)
                 e.Dispose();
         }
-        public Player SpawnPlayer(int x, int y, KeyboardHandler keyboard, MouseHandler mouse) {
+        public Player SpawnPlayer(int x, int y) {
             Player player = new Player(x, y);
-
-            player.Controller.AttachKeyboardHandler(keyboard);
-            player.Controller.AttachMouseHandler(mouse);
             this.AddEntity(player);
 
             return player;

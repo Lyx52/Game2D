@@ -42,10 +42,10 @@ namespace Game.Core {
             Renderer.LoadTexture("grass", "./res/textures/grass.png");
             Renderer.LoadTexture("apple", "./res/textures/apple.png");
             Renderer.LoadTexture("spritesheet", "./res/textures/tile_spritesheet.png");
-
+            Renderer.LoadTexture("pod_texture", "./res/textures/pod.png");
             // Display system info
             Logger.Info($"OS Version: {System.Environment.OSVersion}");
-            GLHelper.DisplayGLInfo();
+            GLDebug.DisplayGLInfo();
         }
         public void LoadWorld() {
             // Init world
@@ -53,7 +53,7 @@ namespace Game.Core {
         }
         protected override void OnRenderFrame(FrameEventArgs args)
         {   
-            Renderer.StartScene(this.World.GetPlayer().KinematicBody.Position);
+            Renderer.StartScene(this.World.GetPlayer().Physics.Position);
             this.World.Render(this.Renderer);
             Renderer.EndScene();
             

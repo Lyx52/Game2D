@@ -25,14 +25,14 @@ namespace Game.Graphics {
             this.AttachShader(fragSource, ShaderType.FragmentShader);
 
             GL.LinkProgram(this.programID);
-            GLHelper.CheckGLObjectError(this.programID, GLObject.PROGRAM);
+            GLDebug.CheckGLObjectError(this.programID, GLObject.PROGRAM);
         }
         
         public void AttachShader(string source, ShaderType type) {
             int shaderID = GL.CreateShader(type);
             GL.ShaderSource(shaderID, source);
             GL.CompileShader(shaderID);
-            GLHelper.CheckGLObjectError(shaderID, GLObject.SHADER);
+            GLDebug.CheckGLObjectError(shaderID, GLObject.SHADER);
 
             GL.AttachShader(this.programID, shaderID);
             GL.DeleteShader(shaderID);

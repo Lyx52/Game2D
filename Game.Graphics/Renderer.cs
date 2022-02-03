@@ -1,8 +1,10 @@
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
 using OpenTK.Mathematics;
+
 using System;
 using System.Collections.Generic;
+
 using Game.Utils;
 using System.Runtime.InteropServices;
 

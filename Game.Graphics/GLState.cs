@@ -17,7 +17,7 @@ namespace Game.Graphics {
                     GL.Disable(this.Capability);
                 }
             }
-            GLHelper.CheckGLError($"Set state {state} to {this.Capability}");
+            GLDebug.CheckGLError($"Set state {state} to {this.Capability}");
         }
     }
     public class ScissorState {

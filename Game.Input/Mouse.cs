@@ -8,37 +8,37 @@ namespace Game.Input {
         MIDDLE
     }
     public class MouseHandler {
-        private bool[] mouseButtons;
-        private Vector2 currentPosition;
-        private Vector2 deltaPosition;
+        private static bool[] mouseButtons;
+        private static Vector2 currentPosition;
+        private static Vector2 deltaPosition;
         public MouseHandler() {
-            this.mouseButtons = new bool[8];
-            this.currentPosition = Vector2.Zero;
-            this.deltaPosition = Vector2.Zero;
+            mouseButtons = new bool[8];
+            currentPosition = Vector2.Zero;
+            deltaPosition = Vector2.Zero;
         }
-        public event Action<MouseWheelEventArgs> MouseWheel;
+        public static event Action<MouseWheelEventArgs> MouseWheel;
         public void OnMouseWheel(MouseWheelEventArgs args) {
             MouseWheel?.Invoke(args);
         }
         public void OnMouseUp(MouseButtonEventArgs args) {
-            this.mouseButtons[(int)args.Button] = false;
+            mouseButtons[(int)args.Button] = false;
         }
         public void OnMouseDown(MouseButtonEventArgs args) {
-            this.mouseButtons[(int)args.Button] = true;
+            mouseButtons[(int)args.Button] = true;
         }
         public void OnMouseMove(MouseMoveEventArgs args) {
-            this.deltaPosition = args.Delta;
-            this.currentPosition.X = args.X;
-            this.currentPosition.Y = args.Y;
+            deltaPosition = args.Delta;
+            currentPosition.X = args.X;
+            currentPosition.Y = args.Y;
         }
-        public bool GetButton(MouseButton button) {
-            return this.mouseButtons[(int)button];
+        public static bool GetButton(MouseButton button) {
+            return mouseButtons[(int)button];
         }
-        public Vector2 GetPosition() {
-            return this.currentPosition;
+        public static Vector2 GetPosition() {
+            return currentPosition;
         }
-        public Vector2 GetDeltaPosition() {
-            return this.deltaPosition;
+        public static Vector2 GetDeltaPosition() {
+            return deltaPosition;
         }
     }
 }

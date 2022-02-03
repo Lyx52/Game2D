@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Threading.Tasks;
 
 using OpenTK.Mathematics;
 using SimplexNoise;
@@ -27,8 +26,8 @@ namespace Game.World {
         private static int MIN_CHUNKFILE_SIZE = 0;
         private static int MIN_WORLDFILE_SIZE = 0;
         private static int MAX_CHUNK_DELTA = 2; // Whats the chunks max delta position between current player chunk and itself 
-        private static int CHUNK_SIZE = 32;
-        private static float TILE_SIZE = 16F;
+        private static int CHUNK_SIZE = 16;
+        private static float TILE_SIZE = 14;
         private static float NOISE_SCALE = 0.0125F;
         private static float TILE_SCALAR = CHUNK_SIZE * TILE_SIZE;
         private string WorldName;
@@ -36,6 +35,7 @@ namespace Game.World {
         private SpriteSheet WorldSpriteSheet;
         private FileStream WorldStream;
         private FileStream ChunkStream;
+        private FileStream EntityStream;
         private DirectoryInfo SavesDirectory;
         private DirectoryInfo WorldDirectory;
         private CompoundTag WorldInfo;
@@ -52,7 +52,7 @@ namespace Game.World {
             Noise.Seed = seed;
             this.WorldName = worldName;
             this.WorldSpriteSheet = new SpriteSheet(GameHandler.Renderer.GetTexture("spritesheet"), 3, 1);
-            this.EntityHandler.SpawnPlayer(0, 0, Application.Keyboard, Application.Mouse);
+            this.EntityHandler.SpawnPlayer(0, 0);
 
             // Load or create the world
             this.SavesDirectory = Directory.CreateDirectory(Path.Combine(IOUtils.GetCWD(), "saves"));
@@ -68,7 +68,7 @@ namespace Game.World {
             }
         }
         public void GenerateGeometry(Vector2 position) {
-            Vector2i center = GetChunkPosition(position);
+            Vector2i center = ScreenToChunkPos(position);
             // Profiler.StartSection("ChunkGeneration");
             for (int row = -(MAX_CHUNK_DELTA - 1); row < MAX_CHUNK_DELTA; row++) {
                 for (int col = -(MAX_CHUNK_DELTA - 1); col < MAX_CHUNK_DELTA; col++) {
@@ -105,20 +105,21 @@ namespace Game.World {
         }
         public void SaveChunk(Chunk chunk) {
             if (this.ChunkInfo.TryGetValue(chunk.Position.ToString(), out Tag tag)) {
+                Profiler.StartSection("OverwriteSaveChunk");
                 long lastPosition = this.ChunkStream.Position;
                 this.ChunkStream.Seek(((LongTag)tag).Value, SeekOrigin.Begin);
                 this.ChunkStream.Write(ArrayUtils.Flatten(ref chunk.Tilemap));
                 this.ChunkStream.Seek(lastPosition, SeekOrigin.Begin);
-                return;
+                Profiler.EndSection("OverwriteSaveChunk");
             } else {
-                Profiler.StartSection("SaveChunk");
+                Profiler.StartSection("NewSaveChunk");
                 // Create new
                 long chunkStartPosition = this.ChunkStream.Position;
                 this.ChunkStream.Write(ArrayUtils.Flatten(ref chunk.Tilemap));
 
                 // Add absolute position in binary file
                 this.ChunkInfo.AddTag(new LongTag(chunk.Position.ToString(), chunkStartPosition));
-                Profiler.EndSection("SaveChunk");
+                Profiler.EndSection("NewSaveChunk");
             }
         }
         public Chunk LoadChunk(Vector2i chunkPosition) {
@@ -199,25 +200,38 @@ namespace Game.World {
         private void DrawTile(in Renderer renderer, Vector2 position, Vector2i subsprite) {
             renderer.DispatchQuad(new DrawQuad2D(TILE_SIZE * position, new Vector2(TILE_SIZE), this.WorldSpriteSheet, subsprite));    
         }
-        public static Vector2i GetChunkPosition(Vector2 position) {
-            return new Vector2i((int)Math.Floor(position.X / TILE_SCALAR), (int)Math.Floor(position.Y / TILE_SCALAR));
-        }
+
         public void Update(double dt) {
             this.EntityHandler.Update(dt);
-            this.GenerateGeometry(this.GetPlayer().KinematicBody.Position);
+            Player currentPlayer = this.GetPlayer();
+            this.GenerateGeometry(this.GetPlayer().Physics.Position);
+            if (currentPlayer.Controller.GetMouseKey(Input.MouseButton.LEFT)) {
+                Vector2i mouseChunkPos = ScreenToChunkPos(currentPlayer.Physics.Position);
+                Vector2i chunkPos = Vector2i.Multiply(mouseChunkPos, CHUNK_SIZE);
+                int chunkIndex = this.Chunks.FindIndex(chunk => {
+                    return chunk.Position == chunkPos;
+                });
+
+                if (chunkIndex >= 0) {
+                    Vector2i tilePos = ScreenToRelTilePos(currentPlayer.Physics.Position);
+                    Logger.Debug($"Player pos {currentPlayer.Physics.Position}, MousePosition {currentPlayer.Controller.GlobalMousePosition}");
+                    Logger.Debug($"Chunk at {chunkPos} has index of {chunkIndex}, tilepos: {tilePos}");
+                    this.Chunks[chunkIndex].Tilemap[tilePos.Y, tilePos.X] = 0;
+                    return;
+                }
+            }
         }
         public Player GetPlayer() {
             return this.EntityHandler.GetPlayer();
         }
         public void Create() {
-
-            // TODO: Fix compression on world creation!
             Logger.Debug($"Creating world {this.WorldName}!");
             this.WorldDirectory = this.SavesDirectory.CreateSubdirectory(this.WorldName);
             
             this.WorldStream = IOUtils.OpenWriteStream(this.GetWorldFilePath("WorldData.bin"));
             this.ChunkStream = IOUtils.OpenReadWriteStream(this.GetWorldFilePath("ChunkData.bin"));
-
+            this.EntityStream = IOUtils.OpenReadWriteStream(this.GetWorldFilePath("EntityData.bin"));
+            
             // Tags for storing essential world data
             this.ChunkInfo = new CompoundTag("ChunkInfo");
             this.WorldInfo = new CompoundTag("WorldInfo");
@@ -281,6 +295,62 @@ namespace Game.World {
             this.Save();
             this.WorldStream.Close();
             this.EntityHandler.Dispose();
+        }
+
+
+        /// <summary>
+        /// Convert from screenspace position to chunk position
+        /// </summary>
+        public static Vector2i ScreenToChunkPos(Vector2 position) {
+            return new Vector2i((int)Math.Floor(position.X / TILE_SCALAR), (int)Math.Floor(position.Y / TILE_SCALAR));
+        }
+        public static Vector2 ChunkToScreenPos(Vector2i position) {
+            return Vector2.Multiply(position, TILE_SCALAR);
+        }
+        private static Vector2i ScreenToTilePos(Vector2 position) {
+            return new Vector2i((int)Math.Floor(position.X / TILE_SIZE), (int)Math.Floor(position.Y / TILE_SIZE));
+        }
+        private static Vector2 TileToScreenPos(Vector2i position) {
+            return Vector2.Multiply(position, TILE_SIZE);
+        }
+        /// <summary>
+        /// Convert from screenspace position to absolute tile position
+        /// </summary>
+        public static Vector2i ScreenToAbsTilePos(Vector2 position, Vector2i chunkPosition) {
+            return chunkPosition + ScreenToTilePos(position);
+        }
+        /// <summary>
+        /// Convert from screenspace position to absolute tile position
+        /// </summary>
+        public static Vector2i ScreenToAbsTilePos(Vector2 position) {
+            Vector2i chunkPosition = Vector2i.Multiply(ScreenToChunkPos(position), CHUNK_SIZE);
+            return ScreenToAbsTilePos(position, chunkPosition);
+        }
+        public static Vector2 AbsTileToScreenPos(Vector2i position) {
+            Vector2 chunkPosition = Vector2.Divide(ChunkToScreenPos(position), CHUNK_SIZE);
+            return AbsTileToScreenPos(position, chunkPosition);
+        }
+        public static Vector2 AbsTileToScreenPos(Vector2i position, Vector2 chunkPosition) {
+            return TileToScreenPos(position) - chunkPosition;
+        }
+        /// <summary>
+        /// Convert from screenspace position to relative tile position
+        /// </summary>
+        public static Vector2i ScreenToRelTilePos(Vector2 position, Vector2i chunkPosition) {
+            Vector2i tilePosition = ScreenToAbsTilePos(position, chunkPosition);
+            tilePosition.X = tilePosition.X % CHUNK_SIZE;
+            tilePosition.Y = tilePosition.Y % CHUNK_SIZE;
+            tilePosition.X = tilePosition.X < 0 ? CHUNK_SIZE + tilePosition.X : tilePosition.X;
+            tilePosition.Y = tilePosition.Y < 0 ? CHUNK_SIZE + tilePosition.Y : tilePosition.Y;
+
+            return tilePosition;
+        }
+        /// <summary>
+        /// Convert from screenspace position to relative tile position
+        /// </summary>
+        public static Vector2i ScreenToRelTilePos(Vector2 position) {
+            Vector2i chunkPosition = Vector2i.Multiply(ScreenToChunkPos(position), CHUNK_SIZE);
+            return ScreenToRelTilePos(position, chunkPosition);
         }
     }
 }

@@ -2,21 +2,21 @@ using OpenTK.Windowing.Common;
 
 namespace Game.Input {
     public class KeyboardHandler {
-        private bool[] inputArray;
+        private static bool[] inputArray;
         public KeyboardHandler() {
-            this.inputArray = new bool[512];
+            inputArray = new bool[512];
         }
         public void OnKeyUp(KeyboardKeyEventArgs args) {
-            this.inputArray[(int)args.Key] = false;
+            inputArray[(int)args.Key] = false;
         }
         public void OnKeyDown(KeyboardKeyEventArgs args) {
-            this.inputArray[(int)args.Key] = true;
+            inputArray[(int)args.Key] = true;
         }
-        public bool GetKey(int keyCode) {
-            return this.inputArray[keyCode];
+        public static bool GetKey(int keyCode) {
+            return inputArray[keyCode];
         }
-        public int GetKeyI(int keyCode) {
-            return this.inputArray[keyCode] ? 1 : 0;
+        public static int GetKeyI(int keyCode) {
+            return inputArray[keyCode] ? 1 : 0;
         }
     }
 }

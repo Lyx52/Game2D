@@ -13,20 +13,11 @@ namespace Game.Entity {
     }
     public class EntityController : EntityComponent{
         private Entity parrentEntity;
-        private KeyboardHandler keyboardHandler;
-        private MouseHandler mouseHandler;
         private Dictionary<ControllerAction, int> actions;
-
         public EntityController(Entity parrent) {
             this.parrentEntity = parrent;
             this.actions = new Dictionary<ControllerAction, int>();
             this.InitDefaultKeybinds();
-        }
-        public void AttachKeyboardHandler(KeyboardHandler handler) {
-            this.keyboardHandler = handler;
-        }
-        public void AttachMouseHandler(MouseHandler handler) {
-            this.mouseHandler = handler;
         }
         public int GetActionKeyCode(ControllerAction action) {
             if (this.actions.TryGetValue(action, out int keyCode)) {
@@ -35,9 +26,12 @@ namespace Game.Entity {
         } 
         public Vector2 GetDirectional() {
             return new Vector2(
-                this.keyboardHandler.GetKeyI(GetActionKeyCode(ControllerAction.MOVE_RIGHT)) - this.keyboardHandler.GetKeyI(GetActionKeyCode(ControllerAction.MOVE_LEFT)),
-                this.keyboardHandler.GetKeyI(GetActionKeyCode(ControllerAction.MOVE_UP)) - this.keyboardHandler.GetKeyI(GetActionKeyCode(ControllerAction.MOVE_DOWN))
+                KeyboardHandler.GetKeyI(GetActionKeyCode(ControllerAction.MOVE_RIGHT)) - KeyboardHandler.GetKeyI(GetActionKeyCode(ControllerAction.MOVE_LEFT)),
+                KeyboardHandler.GetKeyI(GetActionKeyCode(ControllerAction.MOVE_UP)) - KeyboardHandler.GetKeyI(GetActionKeyCode(ControllerAction.MOVE_DOWN))
             );
+        }
+        public bool GetMouseKey(Input.MouseButton button) {
+            return MouseHandler.GetButton(button);
         }
         public void InitDefaultKeybinds() {
             foreach (ControllerAction action in Enum.GetValues(typeof(ControllerAction))) {
@@ -58,7 +52,7 @@ namespace Game.Entity {
             } 
         }
         public Vector2 MousePosition {
-            get { return this.mouseHandler.GetPosition(); }
+            get { return MouseHandler.GetPosition(); }
         }
         public Vector2 GlobalMousePosition {
             get { return (this.MousePosition - GameHandler.WindowSize / 2); }

@@ -2,7 +2,7 @@ using OpenTK.Mathematics;
 using Game.Utils;
 
 namespace Game.Graphics {
-    public unsafe class OrthoCamera {
+    public class OrthoCamera {
         private Matrix4 Projection;
         public double Rotation { get; set; }
         public OrthoCamera(Vector2 size) : this(-size.X / 2, size.X / 2, -size.Y / 2, size.Y /2) {}

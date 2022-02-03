@@ -116,7 +116,7 @@ namespace Game.Graphics {
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (float)TextureWrapMode.ClampToEdge);
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (float)TextureWrapMode.ClampToEdge);
-                GLHelper.CheckGLError($"TextHandler::Char {(char)i} glyph creation");
+                GLDebug.CheckGLError($"TextHandler::Char {(char)i} glyph creation");
                 if (!CharacterMap.TryAdd((char)i, 
                     new Character(texID, new Vector2i((int)CurrentFace.GlyphBitmap.width, (int)CurrentFace.GlyphBitmap.rows), new Vector2i((int)CurrentFace.GlyphBitmapLeft, (int)CurrentFace.GlyphBitmapTop), (uint)CurrentFace.GlyphMetricHorizontalAdvance))
                 ){

@@ -38,7 +38,7 @@ namespace Game.Graphics {
                 }
                 TileY += sizeNormalized.Y;
             }
-
+            Array.Reverse(this.tileUV);
             GC.Collect();
         }
         public void AddNamedSubSprite(string spriteName, int x, int y) {

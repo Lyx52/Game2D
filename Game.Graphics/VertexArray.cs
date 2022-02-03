@@ -52,7 +52,7 @@ namespace Game.Graphics {
             foreach (VertexElement element in layout.Elements) {
                 GL.EnableVertexAttribArray(element.Index);
                 GL.VertexAttribPointer(element.Index, element.Components, element.Type, element.Normalized, layout.Stride, element.Offset);
-                GLHelper.CheckGLError("SetAttribPointer");
+                GLDebug.CheckGLError("SetAttribPointer");
             }
         }
         public void Dispose() {

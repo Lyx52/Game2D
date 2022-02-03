@@ -6,10 +6,12 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace Game.Entity {
     public enum ControllerAction {
+        NONE,
         MOVE_UP,
         MOVE_DOWN,
         MOVE_LEFT,
-        MOVE_RIGHT
+        MOVE_RIGHT,
+        PICK_UP_ITEM
     }
     public class EntityController : EntityComponent{
         private Entity parrentEntity;
@@ -26,9 +28,15 @@ namespace Game.Entity {
         } 
         public Vector2 GetDirectional() {
             return new Vector2(
-                KeyboardHandler.GetKeyI(GetActionKeyCode(ControllerAction.MOVE_RIGHT)) - KeyboardHandler.GetKeyI(GetActionKeyCode(ControllerAction.MOVE_LEFT)),
-                KeyboardHandler.GetKeyI(GetActionKeyCode(ControllerAction.MOVE_UP)) - KeyboardHandler.GetKeyI(GetActionKeyCode(ControllerAction.MOVE_DOWN))
+                GetActionKeyI(ControllerAction.MOVE_RIGHT) - GetActionKeyI(ControllerAction.MOVE_LEFT),
+                GetActionKeyI(ControllerAction.MOVE_UP) - GetActionKeyI(ControllerAction.MOVE_DOWN)
             );
+        }
+        public int GetActionKeyI(ControllerAction action) {
+            return KeyboardHandler.GetKeyI(GetActionKeyCode(action));    
+        }
+        public bool GetActionKey(ControllerAction action) {
+            return KeyboardHandler.GetKey(GetActionKeyCode(action));    
         }
         public bool GetMouseKey(Input.MouseButton button) {
             return MouseHandler.GetButton(button);
@@ -37,16 +45,19 @@ namespace Game.Entity {
             foreach (ControllerAction action in Enum.GetValues(typeof(ControllerAction))) {
                 switch(action) {
                     case ControllerAction.MOVE_UP: {
-                        this.actions.Add(action, (int)Keys.W); // W
+                        this.actions.Add(action, (int)Keys.W);
                     } break;
                     case ControllerAction.MOVE_DOWN: {
-                        this.actions.Add(action, (int)Keys.S); // S
+                        this.actions.Add(action, (int)Keys.S);
                     } break;
                     case ControllerAction.MOVE_LEFT: {
-                        this.actions.Add(action, (int)Keys.A); // A
+                        this.actions.Add(action, (int)Keys.A);
                     } break;
                     case ControllerAction.MOVE_RIGHT: {
-                        this.actions.Add(action, (int)Keys.D); // D
+                        this.actions.Add(action, (int)Keys.D);
+                    } break;
+                    case ControllerAction.PICK_UP_ITEM: {
+                        this.actions.Add(action, (int)Keys.F);
                     } break;
                 }
             } 

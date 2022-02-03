@@ -42,8 +42,7 @@ namespace Game.Core {
             Renderer.LoadTexture("grass", "./res/textures/grass.png");
             Renderer.LoadTexture("apple", "./res/textures/apple.png");
             Renderer.LoadTexture("spritesheet", "./res/textures/tile_spritesheet.png");
-            Renderer.LoadTexture("pod_texture", "./res/textures/pod.png");
-            Renderer.LoadTexture("microcraft_texture", "./res/textures/microcraft_spritesheet.png");
+            Renderer.LoadTexture("player_texture", "./res/textures/player_texture.png");
             // Display system info
             Logger.Info($"OS Version: {System.Environment.OSVersion}");
             GLDebug.DisplayGLInfo();

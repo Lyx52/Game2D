@@ -44,17 +44,32 @@ namespace Game.Utils {
                 #endif
             }
         }
+        public static void Info(object obj) {
+            Info(obj.ToString());
+        }
         public static void Info(string message) {
             Log(message, LogLevel.INFO);
+        }
+        public static void Warn(object obj) {
+            Warn(obj.ToString());
         }
         public static void Warn(string message) {
             Log(message, LogLevel.WARN);
         }
+        public static void Debug(object obj) {
+            Debug(obj.ToString());
+        }
         public static void Debug(string message) {
             Log(message, LogLevel.DEBUG);
         }
+        public static void Error(object obj) {
+            Error(obj.ToString());
+        }
         public static void Error(string message) {
             Log(message, LogLevel.ERROR);
+        }
+        public static void Critical(object obj) {
+            Critical(obj.ToString());
         }
         public static void Critical(string message) {
             Log(message, LogLevel.CRITICAL);

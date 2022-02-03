@@ -36,10 +36,13 @@ namespace Game.Graphics {
         public void StepPlayback() {
             this.CurrentFrameIndex++;
             if (this.CurrentFrameIndex > this.Animations[this.CurrentAnimation].endIndex) {
-                this.CurrentFrameIndex = this.Animations[this.CurrentAnimation].reset ? 0 : this.CurrentFrameIndex - 1;
+                this.CurrentFrameIndex = this.Animations[this.CurrentAnimation].reset ? this.Animations[this.CurrentAnimation].startIndex : this.Animations[this.CurrentAnimation].endIndex;
             }
         }
-        public void PlayAnimation(string animationName) {
+        public void PlayAnimation(string animationName, bool forceRewind=false) {
+            if (this.CurrentAnimation == animationName || forceRewind)
+                return;
+
             if (this.Animations.TryGetValue(animationName, out var animation)) {
                 this.CurrentFrameIndex = animation.startIndex;
                 this.FrameTime = animation.frameTime;

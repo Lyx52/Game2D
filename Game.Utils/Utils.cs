@@ -175,6 +175,20 @@ namespace Game.Utils {
             }
             return output;
         }
+        public static T[] Reverse<T>(T[] array){
+
+            int i = 0;
+            int j = array.Length - 1;
+            while (i < j)
+            {
+                T value = array[i];
+                array[i] = array[j];
+                array[j] = value;
+                i++;
+                j--;
+            }
+            return array;
+        }
         public static Array ReverseClone(Array array) {
             Array output = (Array)array.Clone();
             Array.Reverse(output);
@@ -206,6 +220,12 @@ namespace Game.Utils {
             Matrix4 _rotation = Matrix4.CreateRotationZ((float)MathUtils.ToRadians((float)rotation));
             Matrix4 _scale = Matrix4.CreateScale(size.X, size.Y, 1.0f);
             return Matrix4.Mult(Matrix4.Mult(_scale, _rotation), _translation);
+        }
+        public static Vector2 ClampVelocity(Vector2 vec, float min, float max) {
+            vec.X = Math.Abs(vec.X) < min ? 0 : vec.X > max ? (int)vec.X : vec.X;
+            vec.Y = Math.Abs(vec.Y) < min ? 0 : vec.Y > max ? (int)vec.Y : vec.Y;
+
+            return vec;
         }
     }
 }

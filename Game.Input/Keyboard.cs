@@ -3,6 +3,7 @@ using OpenTK.Windowing.Common;
 namespace Game.Input {
     public class KeyboardHandler {
         private static bool[] inputArray;
+        public static int LastKeyCode = 0;
         public KeyboardHandler() {
             inputArray = new bool[512];
         }
@@ -16,6 +17,7 @@ namespace Game.Input {
             return inputArray[keyCode];
         }
         public static int GetKeyI(int keyCode) {
+            LastKeyCode = keyCode;
             return inputArray[keyCode] ? 1 : 0;
         }
     }

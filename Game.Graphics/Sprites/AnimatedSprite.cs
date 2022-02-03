@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using OpenTK.Mathematics;
 using Game.Utils;
+using System;
 namespace Game.Graphics {
     public class AnimatedSprite : SpriteSheet {
         public uint CurrentFrameIndex = 0;
@@ -9,6 +10,7 @@ namespace Game.Graphics {
         public double FrameTime = 0;
         private double DefaultFrameTime;
         public string CurrentAnimation = "None";
+        public bool PlaybackPause = false;
         public Dictionary<string, (uint startIndex, uint endIndex, double frameTime, bool reset)> Animations;
         public AnimatedSprite(Texture texture, int cols, int rows, double frameTime=1D) : base(texture, cols, rows) {
             this.Type = SpriteType.ANIMATED_SPRITE;
@@ -24,7 +26,7 @@ namespace Game.Graphics {
             this.Animations.Add(CurrentAnimation, (startIndex: CurrentFrameIndex, endIndex: MaxFrameIndex, frameTime: DefaultFrameTime, reset: true));
         }
         public void Update(double dt) {
-            this.AnimationTime += dt;
+            this.AnimationTime += this.PlaybackPause ? 0 : dt;
             if (this.AnimationTime >= FrameTime) {
                 this.AnimationTime = 0;
                 this.StepPlayback();
@@ -51,7 +53,7 @@ namespace Game.Graphics {
             this.AddAnimation(animationName, startIndex, endIndex, frameTime:this.DefaultFrameTime);
         }
         public void AddAnimation(string animationName, uint startIndex, uint endIndex, double frameTime, bool reset=true) {
-            Logger.Assert(startIndex < MaxFrameIndex && endIndex <= MaxFrameIndex, $"Cannot add animation {animationName}, start/end index must be less than {MaxFrameIndex}!");
+            Logger.Assert(startIndex <= MaxFrameIndex && endIndex <= MaxFrameIndex, $"Cannot add animation {animationName}, start/end index must be less than {MaxFrameIndex}!");
             if (this.Animations.TryAdd(animationName, (startIndex:startIndex, endIndex:endIndex, frameTime: frameTime, reset:reset)))
                 return;
 

@@ -18,7 +18,7 @@ namespace Game.Entity {
             return "DrawableEntity";
         }
         public DrawQuad2D GetRenderQuad(Vector2 position, Vector2 size, float rotation) {
-            return new DrawQuad2D(position, size, this.Sprite.SpriteTexture, this.Sprite.GetTexCoords(), this.MaskColor, rotation:rotation, layer:this.Layer);
+            return new DrawQuad2D(position, size, this.Sprite.SpriteTexture, this.Sprite.TexCoords, this.MaskColor, rotation:rotation, layer:this.Layer);
         }
         public DrawQuad2D GetRenderQuad(PhysicalBody body) {
             return this.GetRenderQuad(body.Position, body.Size, body.Rotation);

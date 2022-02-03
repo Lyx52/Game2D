@@ -175,6 +175,11 @@ namespace Game.Utils {
             }
             return output;
         }
+        public static Array ReverseClone(Array array) {
+            Array output = (Array)array.Clone();
+            Array.Reverse(output);
+            return output;
+        }
     }
     public static class MathUtils {
         public static double ToRadians(double value) {

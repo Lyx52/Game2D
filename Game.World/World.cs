@@ -25,9 +25,9 @@ namespace Game.World {
         public List<Chunk> Chunks;
         private static int MIN_CHUNKFILE_SIZE = 0;
         private static int MIN_WORLDFILE_SIZE = 0;
-        private static int MAX_CHUNK_DELTA = 2; // Whats the chunks max delta position between current player chunk and itself 
+        private static int MAX_CHUNK_DELTA = 3; // Whats the chunks max delta position between current player chunk and itself 
         private static int CHUNK_SIZE = 16;
-        private static float TILE_SIZE = 14;
+        private static float TILE_SIZE = 16;
         private static float NOISE_SCALE = 0.0125F;
         private static float TILE_SCALAR = CHUNK_SIZE * TILE_SIZE;
         private string WorldName;

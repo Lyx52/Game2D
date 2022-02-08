@@ -11,7 +11,8 @@ namespace Game.Entity {
         MOVE_DOWN,
         MOVE_LEFT,
         MOVE_RIGHT,
-        PICK_UP_ITEM
+        PICK_UP_ITEM,
+        ATTACK
     }
     public class EntityController : EntityComponent{
         private Entity parrentEntity;
@@ -58,6 +59,9 @@ namespace Game.Entity {
                     } break;
                     case ControllerAction.PICK_UP_ITEM: {
                         this.actions.Add(action, (int)Keys.F);
+                    } break;
+                    case ControllerAction.ATTACK: {
+                        this.actions.Add(action, (int)Keys.Space);
                     } break;
                 }
             } 

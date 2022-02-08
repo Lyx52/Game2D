@@ -9,6 +9,9 @@ namespace Game.Entity {
     public class Player : DrawableEntity {
         private string PlayerName = "NoName";
         private ControllerAction LastAction = ControllerAction.NONE;
+        public bool IsPickingUp = false;
+        public bool IsMoving = false;
+        public bool IsAttacking = false;
         public Player(float x, float y) : base() {
             this.AttachComponent(new KinematicBody(x, y));
             this.AttachComponent(new EntityController(this));
@@ -27,15 +30,15 @@ namespace Game.Entity {
             this.Animation.AddAnimation("up_walk", 27, 32);
 
             // Add attack animations
-            this.Animation.AddAnimation("down_attack", 33, 35);
-            this.Animation.AddAnimation("side_attack", 36, 38);
-            this.Animation.AddAnimation("up_attack", 39, 41);
+            this.Animation.AddAnimation("down_attack", 33, 35, frameTime: 0.3F, reset: false);
+            this.Animation.AddAnimation("side_attack", 36, 38, frameTime: 0.3F, reset: false);
+            this.Animation.AddAnimation("up_attack", 39, 41, frameTime: 0.3F, reset: false);
 
             // Add pickup animation
             this.Animation.AddAnimation("pick_up", 42, 46, frameTime: 0.25F, reset: false);
 
             this.Animation.PlayAnimation("up_idle");
-            this.Physics.Size = new Vector2(64, 64);
+            this.Physics.Size = new Vector2(96, 96);
             this.Layer = RenderLayer.LAYER_2;
         }
         public override void Draw(Renderer renderer) {
@@ -53,7 +56,11 @@ namespace Game.Entity {
         }
         public override void Update(double dt) {
             this.Animation.Update(dt);
-            
+            this.UpdateState();
+            if (this.Controller.GetActionKey(ControllerAction.PICK_UP_ITEM)) {
+                this.Animation.PlayAnimation("pick_up");
+            }
+
             if (this.Controller.GetDirectional() == Vector2.Zero) {
                 // We are idle
                 switch(this.LastAction) {
@@ -95,10 +102,7 @@ namespace Game.Entity {
                     }
                 }
             }
-            if (this.Controller.GetActionKey(ControllerAction.PICK_UP_ITEM)) {
-                this.Animation.PlayAnimation("pick_up");
-            }
-
+        
             this.Physics.Velocity += this.Controller.GetDirectional() * (float)(this.Physics.Acceleration * dt);
 
             // We add velocity to position
@@ -113,6 +117,9 @@ namespace Game.Entity {
         }
         public override string GetParrent() {
             return base.ToString();
+        }
+        public void UpdateState() {
+            this.IsMoving = this.Controller.GetDirectional() != Vector2.Zero;
         }
         public CompoundTag GetPlayerTag() {
             return new CompoundTag("Player", new List<Tag>() {

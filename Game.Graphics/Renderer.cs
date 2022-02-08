@@ -145,15 +145,19 @@ namespace Game.Graphics {
         }
     }
     public class Renderer {
-        private GLState RendererState;
+        public GLState RendererState;
         private RenderStorage Storage;
         private ShaderProgram TextureShader;
         private VertexArray<uint, Vertex> QuadVertexArray;
         public static Vector2[] DefaultUVCoords;
         public OrthoCamera RenderCamera;
         private GUIHandler GUIRenderer;
+        public static Vector2i ScreenSize;
+        public static Rect ScreenRectangle;
         public Renderer(int bufferSize, Vector2i drawSize) : this(bufferSize, drawSize.X, drawSize.Y) {}
         public Renderer(int bufferSize, int width, int height) {
+            ScreenSize = new Vector2i(width, height);
+            ScreenRectangle = new Rect(-(width / 2), -(height / 2), width / 2, height / 2);
             DefaultUVCoords = new Vector2[4] {
                 new Vector2(1.0f, 1.0f),
                 new Vector2(1.0f, 0.0f),
@@ -188,7 +192,6 @@ namespace Game.Graphics {
                 quadIndices[i + 5] = (uint)offset + 3;
                 offset += 4;
             }
-
             // Setup vertex buffer/array
             this.QuadVertexArray = new VertexArray<uint, Vertex>(VertexLayout, this.Storage.MAX_INDICES, this.Storage.MAX_VERTICES, indices:quadIndices);
             this.GUIRenderer = new GUIHandler();
@@ -197,14 +200,15 @@ namespace Game.Graphics {
             Logger.Debug($"CurrentFont: {GUIHandler.CurrentFace.MarshalFamilyName()}");
 
             // Init renderer camera camera draw size is window width divided by aspect ratio
-            this.RenderCamera = new OrthoCamera(-(width / 2), (width / 2), -(height / 2), (height / 2));
+            this.RenderCamera = new OrthoCamera(-(ScreenSize.X / 2), (ScreenSize.X / 2), -(ScreenSize.Y / 2), (ScreenSize.Y / 2));
 
             // Collect garbage, for some reason garbage collector collects our buffers
             GC.Collect();
-            GL.PixelStore(PixelStoreParameter.UnpackAlignment, 1);   
+            GL.PixelStore(PixelStoreParameter.UnpackAlignment, 1);
         }
         public void DispatchQuad(DrawQuad2D quad) {
-            this.Storage.DispatchedQuads.Add(quad);
+            if (ScreenRectangle.Contains(quad.Position - RenderCamera.Position.Xy))
+                this.Storage.DispatchedQuads.Add(quad);
         }
         public void GenerateQuadGeometry() {
             // We need to sort quads by their layer(We do this to avoid depth buffers)
@@ -218,10 +222,9 @@ namespace Game.Graphics {
                 this.NextBatch();
             }
             int textureIndex = this.AddUniqueTexture(quad.Texture);
-            Matrix4 transform = MathUtils.CreateTransform(quad.Position, quad.Size, quad.Rotation);
+            Matrix4 _rotation = Matrix4.CreateRotationZ((float)MathUtils.ToRadians((float)quad.Rotation));
             for (int i = 0; i < 4; i++) {
-                // This actually only check if its a center mode, if its any other mode it will always be corner
-                Vector4 vertexPosition = this.DefaultQuad[i] * transform;
+                Vector4 vertexPosition = new Vector4(quad.Position + this.DefaultQuad[i].Xy * quad.Size) * _rotation;
                 this.QuadVertexArray.AppendVertex(new Vertex(vertexPosition.Xy, quad.Color, quad.TexCoords[i], textureIndex));
                 this.Storage.Stats.CurrentVertexCount++;
             }
@@ -234,7 +237,8 @@ namespace Game.Graphics {
             GL.Scissor(0, 0, GameHandler.WindowSize.X, GameHandler.WindowSize.Y);
 
             this.Storage.Stats.TotalFlushCount = 0;
-            this.TextureShader.SetMat4(this.RenderCamera.Recalculate(cameraPosition), "viewProjection");
+            this.RenderCamera.Position.Xy = cameraPosition;
+            this.TextureShader.SetMat4(this.RenderCamera.Recalculate(), "viewProjection");
             this.StartBatch();
         }
         public void EndScene() {
@@ -334,6 +338,12 @@ namespace Game.Graphics {
         }
         public string GetStats() {
             return $"Mem: {Math.Round((double)System.GC.GetTotalMemory(false) / (1000 * 1000), 2)}Mb, {this.Storage.Stats.ToString()}";
+        }
+        public static Vector2 ToScreenSpace(Vector2 worldSpace) {
+            return Vector2.Multiply(Vector2.Divide(worldSpace, ScreenSize), 2) - Vector2.One;
+        }
+        public static Vector2 ToWorldSpace(Vector2 screenSpace) {
+            return Vector2.Multiply(Vector2.Divide(screenSpace + Vector2.One, 2), ScreenSize);
         }
     }
 }

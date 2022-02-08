@@ -20,6 +20,8 @@ namespace Game.Graphics {
                 }
             }
             MaxFrameIndex--;
+            Logger.Assert(MaxFrameIndex >= 0, "Animation must contain atleast one frame!");
+            
             this.DefaultFrameTime = frameTime;
             this.FrameTime = frameTime;
             this.Animations = new Dictionary<string, (uint startIndex, uint endIndex, double frameTime, bool reset)>();
@@ -42,7 +44,7 @@ namespace Game.Graphics {
         public void PlayAnimation(string animationName, bool forceRewind=false) {
             if (this.CurrentAnimation == animationName || forceRewind)
                 return;
-
+            
             if (this.Animations.TryGetValue(animationName, out var animation)) {
                 this.CurrentFrameIndex = animation.startIndex;
                 this.FrameTime = animation.frameTime;

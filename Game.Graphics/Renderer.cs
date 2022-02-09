@@ -150,14 +150,19 @@ namespace Game.Graphics {
         private ShaderProgram TextureShader;
         private VertexArray<uint, Vertex> QuadVertexArray;
         public static Vector2[] DefaultUVCoords;
-        public OrthoCamera RenderCamera;
+        public static OrthoCamera RenderCamera;
         private GUIHandler GUIRenderer;
         public static Vector2i ScreenSize;
+        public static Vector2i AspectRatio;
+        public static Vector2 DrawSize;
         public static Rect ScreenRectangle;
+        private float ScreenGap = 8;
         public Renderer(int bufferSize, Vector2i drawSize) : this(bufferSize, drawSize.X, drawSize.Y) {}
         public Renderer(int bufferSize, int width, int height) {
+            AspectRatio = new Vector2i(4, 3);
+
             ScreenSize = new Vector2i(width, height);
-            ScreenRectangle = new Rect(-(width / 2), -(height / 2), width / 2, height / 2);
+            ScreenRectangle = new Rect(-(width / 2) - ScreenGap, -(height / 2) - ScreenGap, width / 2 + ScreenGap, height / 2 + ScreenGap);
             DefaultUVCoords = new Vector2[4] {
                 new Vector2(1.0f, 1.0f),
                 new Vector2(1.0f, 0.0f),
@@ -198,9 +203,10 @@ namespace Game.Graphics {
             
             GUIHandler.LoadFont("./res/font/arial.ttf");
             Logger.Debug($"CurrentFont: {GUIHandler.CurrentFace.MarshalFamilyName()}");
-
-            // Init renderer camera camera draw size is window width divided by aspect ratio
-            this.RenderCamera = new OrthoCamera(-(ScreenSize.X / 2), (ScreenSize.X / 2), -(ScreenSize.Y / 2), (ScreenSize.Y / 2));
+            
+            // Init render camera, currently aspect ratio is constant
+            DrawSize = RecalculateDrawSize(ScreenSize, AspectRatio);
+            RenderCamera = new OrthoCamera(DrawSize);
 
             // Collect garbage, for some reason garbage collector collects our buffers
             GC.Collect();
@@ -232,13 +238,22 @@ namespace Game.Graphics {
             this.QuadVertexArray.IndicesCount += 6;
             this.Storage.Stats.CurrentQuadCount++;
         }
+        private Vector2 RecalculateDrawSize(Vector2 resize, Vector2 aspect) {
+            float aspectRatio = aspect.X / aspect.Y;
+            if (resize.Y * aspectRatio < resize.X) {
+                resize.X = (int)(resize.Y * aspectRatio);
+            } else {
+                resize.Y = (int)(resize.X / aspectRatio);
+            }
+            return resize;
+        }
         public void StartScene(in Vector2 cameraPosition) {
             GL.Clear(ClearBufferMask.ColorBufferBit);
             GL.Scissor(0, 0, GameHandler.WindowSize.X, GameHandler.WindowSize.Y);
 
             this.Storage.Stats.TotalFlushCount = 0;
-            this.RenderCamera.Position.Xy = cameraPosition;
-            this.TextureShader.SetMat4(this.RenderCamera.Recalculate(), "viewProjection");
+            RenderCamera.Position.Xy = cameraPosition;
+            this.TextureShader.SetMat4(RenderCamera.Recalculate(), "viewProjection");
             this.StartBatch();
         }
         public void EndScene() {
@@ -273,7 +288,7 @@ namespace Game.Graphics {
         public void OnResize(ResizeEventArgs args) {
             GameHandler.WindowSize = args.Size;
             GL.Viewport(0, 0, args.Size.X, args.Size.Y);
-            this.GUIRenderer.SetTextProjection(args.Size);   
+            this.GUIRenderer.SetTextProjection(args.Size);
         }
         public static void DrawIndexed(PrimitiveType type, int indices) {
             GL.DrawElements(type, indices, DrawElementsType.UnsignedInt, 0);
@@ -339,11 +354,17 @@ namespace Game.Graphics {
         public string GetStats() {
             return $"Mem: {Math.Round((double)System.GC.GetTotalMemory(false) / (1000 * 1000), 2)}Mb, {this.Storage.Stats.ToString()}";
         }
+        public static Vector2 ToScreenSpaceRelCamera(Vector2 worldSpace) {
+            return ToScreenSpace(worldSpace - RenderCamera.Position.Xy);
+        }
         public static Vector2 ToScreenSpace(Vector2 worldSpace) {
             return Vector2.Multiply(Vector2.Divide(worldSpace, ScreenSize), 2) - Vector2.One;
         }
         public static Vector2 ToWorldSpace(Vector2 screenSpace) {
             return Vector2.Multiply(Vector2.Divide(screenSpace + Vector2.One, 2), ScreenSize);
+        }
+        public static Vector2 ToWorldSpaceRelCamera(Vector2 screenSpace) {
+            return ToWorldSpace(screenSpace) + RenderCamera.Position.Xy;
         }
     }
 }

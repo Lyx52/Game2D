@@ -9,9 +9,9 @@ namespace Game.Utils {
     public struct Rect {
         public Vector2 StartPosition;
         public Vector2 EndPosition;
-        public Rect(float x1, float y1, float x2, float y2, float screenGap=32) {
-            this.StartPosition = new Vector2(x1 - screenGap, y1 - screenGap);
-            this.EndPosition = new Vector2(x2 + screenGap, y2 + screenGap);
+        public Rect(float x1, float y1, float x2, float y2) {
+            this.StartPosition = new Vector2(x1, y1);
+            this.EndPosition = new Vector2(x2, y2);
         }
         public bool Contains(Vector2 position) {
             return this.StartPosition.X <= position.X && this.EndPosition.X >= position.X && this.StartPosition.Y <= position.Y && this.EndPosition.Y >= position.Y;

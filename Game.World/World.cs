@@ -105,26 +105,26 @@ namespace Game.World {
         }
         public void SaveChunk(Chunk chunk) {
             if (this.ChunkInfo.TryGetValue(chunk.Position.ToString(), out Tag tag)) {
-                Profiler.StartSection("OverwriteSaveChunk");
+                //Profiler.StartSection("OverwriteSaveChunk");
                 long lastPosition = this.ChunkStream.Position;
                 this.ChunkStream.Seek(((LongTag)tag).Value, SeekOrigin.Begin);
                 this.ChunkStream.Write(ArrayUtils.Flatten(ref chunk.Tilemap));
                 this.ChunkStream.Seek(lastPosition, SeekOrigin.Begin);
-                Profiler.EndSection("OverwriteSaveChunk");
+                //Profiler.EndSection("OverwriteSaveChunk");
             } else {
-                Profiler.StartSection("NewSaveChunk");
+                //Profiler.StartSection("NewSaveChunk");
                 // Create new
                 long chunkStartPosition = this.ChunkStream.Position;
                 this.ChunkStream.Write(ArrayUtils.Flatten(ref chunk.Tilemap));
 
                 // Add absolute position in binary file
                 this.ChunkInfo.AddTag(new LongTag(chunk.Position.ToString(), chunkStartPosition));
-                Profiler.EndSection("NewSaveChunk");
+                //Profiler.EndSection("NewSaveChunk");
             }
         }
         public Chunk LoadChunk(Vector2i chunkPosition) {
             if (this.ChunkInfo.TryGetValue(chunkPosition.ToString(), out Tag tag)) {
-                Profiler.StartSection("LoadChunk");
+                //Profiler.StartSection("LoadChunk");
                 long lastPosition = this.ChunkStream.Position;
                 this.ChunkStream.Seek(((LongTag)tag).Value, SeekOrigin.Begin);
                 
@@ -134,20 +134,20 @@ namespace Game.World {
                 chunk.Tilemap = ArrayUtils.To2DArray(ref data, CHUNK_SIZE, CHUNK_SIZE);
                 
                 this.ChunkStream.Seek(lastPosition, SeekOrigin.Begin);
-                Profiler.EndSection("LoadChunk");
+                //Profiler.EndSection("LoadChunk");
                 return chunk;
             }
             return this.GenerateChunk(chunkPosition);;
         }
         public Chunk GenerateChunk(Vector2i position) {
-            Profiler.StartSection("GenerateChunk");
+            //Profiler.StartSection("GenerateChunk");
             Chunk chunk = new Chunk(position, CHUNK_SIZE, CHUNK_SIZE);
             for (int row = 0; row < CHUNK_SIZE; row++) {
                 for (int col = 0; col < CHUNK_SIZE; col++) {
                     chunk.Tilemap[row, col] = this.GetTileSprite(row + position.Y, col + position.X);
                 }
             }
-            Profiler.EndSection("GenerateChunk");
+            //Profiler.EndSection("GenerateChunk");
             return chunk;
         }
         public byte GetTileSprite(int row, int col) {

@@ -38,7 +38,7 @@ namespace Game.Entity {
             this.Animation.AddAnimation("pick_up", 42, 46, frameTime: 0.25F, reset: false);
 
             this.Animation.PlayAnimation("up_idle");
-            this.Physics.Size = new Vector2(96, 96);
+            this.Physics.Size = new Vector2(64, 96);
             this.Layer = RenderLayer.LAYER_2;
         }
         public override void Draw(Renderer renderer) {

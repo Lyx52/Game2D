@@ -16,8 +16,6 @@ namespace Game
         // These values need to be loaded from settings
         public static Vector2i AspectRatio = new Vector2i(4, 3);
         public static Vector2i WindowSize = new Vector2i(800, 600);
-        // public static Vector2i AspectRatio = new Vector2i(16, 9);
-        // public static Vector2i WindowSize = new Vector2i(1920, 1080);
         static void Main(string[] args)
         {
             MainLogger = new Logger();

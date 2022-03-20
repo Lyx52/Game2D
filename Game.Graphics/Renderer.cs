@@ -312,7 +312,6 @@ namespace Game.Graphics {
             this.RenderCamera.Dispose();
             this.GUIRenderer.Dispose();
             this.Storage.Dispose();
-
         }
         public void AddTexture(string name, Texture tex) {
             if (!this.Storage.Textures.TryAdd(name, tex)) {

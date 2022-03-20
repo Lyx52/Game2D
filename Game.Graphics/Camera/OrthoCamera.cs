@@ -56,7 +56,7 @@ namespace Game.Graphics {
             Marshal.StructureToPtr<Matrix4>(this.ViewProjectionMat, this.ViewProjection, true);
         }
         public void Dispose() {
-            Marshal.FreeHGlobal(this.ViewProjection);
+            Marshal.DestroyStructure<Matrix4>(this.ViewProjection);
         }
     }
 }

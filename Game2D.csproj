@@ -2,7 +2,7 @@
   <PropertyGroup>
     <RuntimeIdentifiers>win10-x64</RuntimeIdentifiers>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -12,9 +12,16 @@
     <DefineConstants>FILE_LOGGING;</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="OpenTK" Version="4.6.7"/>
-    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4"/>
-    <PackageReference Include="SimplexNoise" Version="2.0.0"/>
-    <PackageReference Include="FreeTypeSharp" Version="2.0.0.8-ci"/>
+    <PackageReference Include="OpenTK" Version="4.6.7" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
+    <PackageReference Include="SimplexNoise" Version="2.0.0" />
+    <PackageReference Include="FreeTypeSharp" Version="2.0.0.8-ci" />
+    <PackageReference Include="Silk.NET" Version="2.15.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="res/**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>

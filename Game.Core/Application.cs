@@ -22,12 +22,13 @@ namespace Game.Core {
             this.Size = new Vector2i(width, height);
             this.Title = title;
             this.UpdateFrequency = 30;
+            this.RenderFrequency = 0;
 
             // Bind keyboard handler to key events
             Keyboard = new KeyboardHandler();
             this.KeyUp += Keyboard.OnKeyUp;
             this.KeyDown += Keyboard.OnKeyDown;
-
+            this.VSync = VSyncMode.Off;
             // Bind mouse handler to mouse events
             Mouse = new MouseHandler();
             this.MouseDown += Mouse.OnMouseDown;
